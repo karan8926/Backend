@@ -42,6 +42,27 @@ async function pantientSignUp(req, res) {
 
         await patientResult.save();
        
+        const transporter = nodemailer.createTransport({
+            service: "Gmail", 
+            secure: true,  
+            port: 465,
+            auth: {
+                user: "satyasandhya.boffinblocks@gmail.com",
+                pass: "xkac gsbq bpns qpnm",
+            },
+        });
+
+        const mailOptions = {
+            from: "satyasandhya.boffinblocks@gmail.com",
+            to: patientResult.email,
+            subject: "Signup successfully ",
+            html: `<p>Your accesscode is <b>${patientResult.accessCode}</b>.</p>
+
+                   <p>Thank you for register with us!</p>`,
+        };
+
+        await transporter.sendMail(mailOptions);
+
         res.status(201).json({
             name: patientResult.name,
             number: patientResult.phone_number,
