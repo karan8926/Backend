@@ -1,0 +1,26 @@
+{
+  "name": "patient-backend",
+  "version": "1.0.0",
+  "description": "Medical-dashboard",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon index.js"
+  },
+  "author": "Sandhya and Gaurav",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
+    "dotenv": "^16.4.5",
+    "email-validator": "^2.0.4",
+    "express": "^4.21.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.8.3",
+    "nodemailer": "^6.9.16",
+    "nodemon": "^3.1.7",
+    "twilio": "^5.3.6",
+    "uuid": "^11.0.3"
+  }
+}
