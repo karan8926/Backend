@@ -30,11 +30,11 @@ const therapistSchema = new mongoose.Schema({
 const Therapist = mongoose.model('Therapist', therapistSchema);
 
 const therapistAvailabilitySchema = new mongoose.Schema({
-    therapistsId: { 
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        ref: 'Therapist'
-    },
+//     therapistsId: { 
+//         type: mongoose.Schema.Types.ObjectId,
+//         required: true,
+//         ref: 'Therapist'
+//     },
     date: {
          type: Date, 
          required: true
@@ -45,7 +45,6 @@ const therapistAvailabilitySchema = new mongoose.Schema({
     },
     status: {
          type: String,
-         enum: ['Confirmed','Pending', 'Cancelled'], 
          required: true
     }, 
   }, { timestamps: true });  

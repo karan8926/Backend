@@ -83,6 +83,8 @@ async function pantientSignIn(req, res){
     if(!accessCode) return res.status(400).json({ error: 'Access code is required.' });
 
     const existedPatient = await Patient.findOne({accessCode})
+    
+    console.log("existedPatient--", existedPatient)
 
     if(!existedPatient) return res.status(400).json({ error: 'Invalid access code.' });
 
@@ -92,8 +94,11 @@ async function pantientSignIn(req, res){
          uniqueSecret, 
         { expiresIn: '24h'} 
     );
-
-    return res.status(200).json({ accessToken: token });
+    const result = existedPatient
+    return res.status(200).json({ 
+        accessToken: token,
+        result
+     });
 
 } catch (error) {
     return res.status(500).json({ error: 'Server error. Please try again later.' });
@@ -101,18 +106,17 @@ async function pantientSignIn(req, res){
 }
 
 async function bookAppointment(req, res){
-    const { therapistsId, date, time, PatientEmail , PatientPhoneNumber} = req.body;
+    const { date, time, email , number, status} = req.body;
 
-    if (!therapistsId || !date || !time || !PatientEmail || !PatientPhoneNumber) {
-        return res.status(400).json({ error: "All fields are required (therapistsId, date, time, userEmail)." });
+    if ( !date || !time || !email || !number || !status) {
+        return res.status(400).json({ error: "All fields are required." });
     }
 
     try {
         const slot = await TherapistAvailability.findOne({
-            therapistsId,
             date: new Date(date),
             time,
-            status: "Pending",
+            status: status,
         });
 
         if (!slot) {
@@ -120,11 +124,11 @@ async function bookAppointment(req, res){
         }
 
         // Update the slot status to "booked"
-        slot.status = "Confirmed";
+        slot.status = status;
         await slot.save();
 
-        // Send email confirmation
-        const therapist = await Therapist.findById(therapistsId);
+        // // Send email confirmation
+        // const therapist = await Therapist.findById(therapistsId);
         
         const transporter = nodemailer.createTransport({
             service: "Gmail", 
@@ -140,7 +144,7 @@ async function bookAppointment(req, res){
             from: "satyasandhya.boffinblocks@gmail.com",
             to: PatientEmail,
             subject: "Booked Appointment Successfully and wait for Confirmation",
-            html: `<p>Your appointment with <b>${therapist.name}</b> is confirmed.</p>
+            html: `<p>Your appointment is confirmed.</p>
                    <p><b>Date:</b> ${date}</p>
                    <p><b>Time:</b> ${time}</p>
                    <p>Thank you for booking with us!</p>`,
@@ -148,12 +152,11 @@ async function bookAppointment(req, res){
 
         await transporter.sendMail(mailOptions);
 
-        const message = {
-          name : therapist.name,
-          date : date,
-          time: time,
-          phone_number : PatientPhoneNumber,
-        }
+        // const message = {
+        //   date : date,
+        //   time: time,
+        //   phone_number : PatientPhoneNumber,
+        // }
         // await sendsms(message)
 
         return res.status(200).json({

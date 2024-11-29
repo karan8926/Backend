@@ -23,8 +23,7 @@ async function AddTherapist(req, res){
         email,
         number,
         region,
-        password,
-        type
+        password
       });
   
       await newTherapist.save();
@@ -38,7 +37,7 @@ async function AddTherapist(req, res){
 //get therapist
 async function getTherapist(req, res){
     try{
-        const availability = await Therapist.find();
+        const availability = await Therapist.find().sort({ createdAt: -1 });
         
         return res.status(200).json({
             message: "fetched successfully",
@@ -57,10 +56,6 @@ async function AddTherapistAvailability(req, res) {
 
     if (!therapistsId || !date || !time || !status) {
         return res.status(400).json({ error: "All fields (therapistsId, date, time, status) are required." });
-    }
-
-    if (!['Confirmed', 'Pending', 'Cancelled'].includes(status)) {
-        return res.status(400).json({ error: "Status must be 'available' or 'booked'." });
     }
 
     try {
