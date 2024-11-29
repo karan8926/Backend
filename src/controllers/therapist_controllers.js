@@ -3,9 +3,9 @@ const {Therapist, TherapistAvailability } = require("../models/therapist_models"
 
 //admin added the therapist details
 async function AddTherapist(req, res){
-    const { name, specialty, email, phone_number , region} = req.body;
+    const { name, email, number , region , password} = req.body;
 
-    if (!name || !specialty || !email || !phone_number || !region) {
+    if (!name || !email || !number || !region || !password) {
       return res.status(400).json({ error: 'All fields are required.' });
     }
   
@@ -15,25 +15,42 @@ async function AddTherapist(req, res){
         return res.status(400).json({ error: 'Therapist is already Added.' });
       }
       const phoneRegex = /^\d{10}$/; 
-      if (!phoneRegex.test(phone_number)) {
+      if (!phoneRegex.test(number)) {
           return res.status(400).json({ error: 'Phone number must be exactly 10 digits.' });
       }
       const newTherapist = new Therapist({
         name,
-        specialty,
         email,
-        phone_number,
-        region
+        number,
+        region,
+        password,
+        type
       });
   
       await newTherapist.save();
-  
+
       return res.status(201).json({ message: 'Therapist added successfully!', Result: newTherapist });
     } catch (error) {
       console.error(error);
       return res.status(500).json({ error: 'Error adding therapist' });
     }
 }
+//get therapist
+async function getTherapist(req, res){
+    try{
+        const availability = await Therapist.find();
+        
+        return res.status(200).json({
+            message: "fetched successfully",
+            availability,
+        });
+    } catch (error) {
+        console.error("Error fetching :", error);
+        return res.status(500).json({ error: "Error fetching Therapist" });
+    }
+}
+
+
 
 async function AddTherapistAvailability(req, res) {
     const { therapistsId, date, time, status } = req.body;
@@ -100,4 +117,35 @@ async function getTherapistAvailability(req, res){
     }
 }
 
-module.exports = {AddTherapist, AddTherapistAvailability, getTherapistAvailability}
+async function loginTherapist(req, res){
+    try {
+        const { email, password } = req.body;
+
+        const getData = await Therapist.findOne({ email });
+ 
+        if (!getData) {
+            return res.status(404).json({ message: "Therapist not found" });
+        }
+
+        const isMatch = getData.password === password && getData.email === email;
+        if (!isMatch) {
+            return res.status(401).json({ message: "Invalid credentials" });
+        }
+        const token = jwt.sign(
+            { id: getData._id, email: getData.email },
+            process.env.JWT_SECRET || "your_jwt_secret",
+            { expiresIn: '24h' }
+        );
+
+        res.status(200).json({
+            message: "Login successful",
+            token,
+            data: { id: getData._id, name: getData.name, email: getData.email },
+        });
+    } catch (error) {
+        console.error("Error in admin login:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+}
+
+module.exports = {AddTherapist, AddTherapistAvailability, getTherapistAvailability, loginTherapist, getTherapist}

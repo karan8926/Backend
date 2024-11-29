@@ -5,19 +5,19 @@ const therapistSchema = new mongoose.Schema({
      type: String,
      required: true
     },
-    specialty: { 
-     type: String, 
-     required: true
-    },
     email: { 
      type: String, 
      required: true
     },
-    phone_number: { 
+    number: { 
      type: String, 
      required: true
     },
     region:{
+     type:String,
+     required: true
+    },
+    password: {
      type:String,
      required: true
     },
