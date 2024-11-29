@@ -57,20 +57,20 @@ const {
   }
   
   async function AddTherapistAvailability(req, res) {
-    const { therapistsId, date, time, status } = req.body;
+    const { email, date, time, status } = req.body;
   
-    if (!therapistsId || !date || !time || !status) {
+    if (!email || !date || !time || !status) {
       return res.status(400).json({
-        error: "All fields (therapistsId, date, time, status) are required.",
+        error: "All fields are required.",
       });
     }
   
+    const terapistData = await Therapist.findOne({ email });
     try {
-      const therapist = await Therapist.findById(therapistsId);
+      const therapist = await Therapist.findById(terapistData._id);
       if (!therapist) {
         return res.status(404).json({ error: "Therapist not found." });
       }
-  
       // const existingAvailability = await Therapist.findOne({ therapistsId, date, time });
       // if (existingAvailability) {
       //     return res.status(400).json({ error: "This time slot is already added for the therapist." });
@@ -79,7 +79,7 @@ const {
       // }
   
       const newAvailability = new TherapistAvailability({
-        therapistsId,
+        therapistsId:terapistData._id,
         date,
         time,
         status,
@@ -110,7 +110,6 @@ const {
       const sort = soonest === "true" ? { date: 1, time: 1 } : {};
   
       const availability = await TherapistAvailability.find(query).sort(sort);
-  
       return res.status(200).json({
         message: "Available slots fetched successfully",
         availability,
