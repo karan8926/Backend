@@ -5,7 +5,7 @@ const {loginAdmin } = require('../controllers/admin_controllers');
 
 const router = Router();
 
-router.post('/pantient-signup', pantientSignUp);
+router.post('/patient-signup', pantientSignUp);
 router.post('/patient-signin', pantientSignIn);
 router.get('/getpatient', getPatient);
 
