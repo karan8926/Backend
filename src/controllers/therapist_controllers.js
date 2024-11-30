@@ -156,10 +156,30 @@ const {
     }
   }
   
+  async function getTherapistNameRegion(req, res){
+    try {
+      const therapistNames = await Therapist.distinct("name");
+      const therapistRegion = await Therapist.distinct("region");
+
+      res.status(200).json({
+        success: true,
+        name: therapistNames,
+        region: therapistRegion
+      });
+    } catch (error) {
+      console.error("Error fetching therapist names:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch therapist names",
+      });
+    }
+  }
+
   module.exports = {
     AddTherapist,
     AddTherapistAvailability,
     getTherapistAvailability,
     loginTherapist,
     getTherapist,
+    getTherapistNameRegion
   };
