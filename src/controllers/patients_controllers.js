@@ -18,11 +18,11 @@ const client = twilio(accountSid, authToken);
 async function pantientSignUp(req, res) {
     try {
         const {name, phone_number, email} = req.body;
-        
+
         if(!name || !phone_number || !email) {
-         return res.status(400).json({ error: 'Name, number, and email are required.' });
-        }   
-        const phoneRegex = /^\d{10}$/; 
+            return res.status(400).json({ error: 'Name, number, and email are required.' });
+        }
+        const phoneRegex = /^\d{10}$/;
         if (!phoneRegex.test(phone_number)) {
             return res.status(400).json({ error: 'Phone number must be exactly 10 digits.' });
         }
@@ -38,13 +38,13 @@ async function pantientSignUp(req, res) {
 
         const accessCode = await generateAccessCode()
 
-        const patientResult = new Patient({name , phone_number, email, accessCode})
+        const patientResult = new Patient({name, phone_number, email, accessCode})
 
         await patientResult.save();
-       
+
         const transporter = nodemailer.createTransport({
-            service: "Gmail", 
-            secure: true,  
+            service: "Gmail",
+            secure: true,
             port: 465,
             auth: {
                 user: "satyasandhya.boffinblocks@gmail.com",
@@ -76,49 +76,48 @@ async function pantientSignUp(req, res) {
     }
 }
 
-async function pantientSignIn(req, res){
-  try {
-    const {accessCode} = req.body;
+async function pantientSignIn(req, res) {
+    try {
+        const { accessCode } = req.body;
 
-    if(!accessCode) return res.status(400).json({ error: 'Access code is required.' });
+        if (!accessCode) return res.status(400).json({ error: 'Access code is required.' });
 
-    const existedPatient = await Patient.findOne({accessCode})
-    
-    console.log("existedPatient--", existedPatient)
+        const existedPatient = await Patient.findOne({ accessCode })
 
-    if(!existedPatient) return res.status(400).json({ error: 'Invalid access code.' });
+        console.log("existedPatient--", existedPatient)
 
-    const uniqueSecret = CryptoJS.SHA256(existedPatient.accessCode).toString(CryptoJS.enc.Base64);
-    const token = jwt.sign(
-        { patientId: existedPatient._id, name: existedPatient.name, email: existedPatient.email },
-         uniqueSecret, 
-        { expiresIn: '24h'} 
-    );
-    const result = existedPatient
-    return res.status(200).json({ 
-        accessToken: token,
-        result
-     });
+        if (!existedPatient) return res.status(400).json({ error: 'Invalid access code.' });
 
-} catch (error) {
-    return res.status(500).json({ error: 'Server error. Please try again later.' });
- }
+        const uniqueSecret = CryptoJS.SHA256(existedPatient.accessCode).toString(CryptoJS.enc.Base64);
+        const token = jwt.sign(
+            { patientId: existedPatient._id, name: existedPatient.name, email: existedPatient.email },
+            uniqueSecret,
+            { expiresIn: '24h' }
+        );
+        const result = existedPatient
+        return res.status(200).json({
+            accessToken: token,
+            result
+        });
+
+    } catch (error) {
+        return res.status(500).json({ error: 'Server error. Please try again later.' });
+    }
 }
 
-async function bookAppointment(req, res){
-    const { date, time, email , number, status} = req.body;
+async function bookAppointment(req, res) {
+    const { therapistsId, date, time, email, status, PatientEmail } = req.body;
 
-    if ( !date || !time || !email || !number || !status) {
+    if (!date || !time || !email || !status) {
         return res.status(400).json({ error: "All fields are required." });
     }
 
     try {
-        const slot = await TherapistAvailability.findOne({
-            date: new Date(date),
-            time,
-            status: status,
-        });
 
+        const slot = await TherapistAvailability.findOne({
+            therapistsId: therapistsId
+        });
+        console.log("slot", slot)
         if (!slot) {
             return res.status(404).json({ error: "No available slot found for the selected date and time." });
         }
@@ -127,9 +126,6 @@ async function bookAppointment(req, res){
         slot.status = status;
         await slot.save();
 
-        // // Send email confirmation
-        // const therapist = await Therapist.findById(therapistsId);
-        
         const transporter = nodemailer.createTransport({
             service: "Gmail", 
             secure: true,  
@@ -169,18 +165,18 @@ async function bookAppointment(req, res){
     }
 }
 
-async function sendsms(message){
+async function sendsms(message) {
     console.log(message)
     const response = await client.messages.create({
         body: `Your appointment with ${message.name} is confirmed for ${message.date} at ${message.time}.`,
-        from: '+1 775 320 8517', 
-        to: `+91${message.phone_number}` 
+        from: '+1 775 320 8517',
+        to: `+91${message.phone_number}`
     });
-    console.log("sms sending successfully",response.sid )
+    console.log("sms sending successfully", response.sid)
 }
 
 
-async function getPatient(req, res){
+async function getPatient(req, res) {
     try {
         const patients = await Patient.find().sort({ createdAt: -1 });
 
@@ -198,4 +194,4 @@ async function getPatient(req, res){
     }
 }
 
-module.exports = {pantientSignUp, pantientSignIn, bookAppointment , getPatient}
+module.exports = { pantientSignUp, pantientSignIn, bookAppointment, getPatient }

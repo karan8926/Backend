@@ -59,32 +59,43 @@ const {
   async function AddTherapistAvailability(req, res) {
     const { email, date, time, status } = req.body;
   
+    // Validate required fields
     if (!email || !date || !time || !status) {
       return res.status(400).json({
         error: "All fields are required.",
       });
     }
   
-    const terapistData = await Therapist.findOne({ email });
     try {
-      const therapist = await Therapist.findById(terapistData._id);
-      if (!therapist) {
+      // Find the therapist using the provided email
+      const therapistData = await Therapist.findOne({ email });
+      console.log("therapistData", therapistData)
+      if (!therapistData) {
         return res.status(404).json({ error: "Therapist not found." });
       }
-      // const existingAvailability = await Therapist.findOne({ therapistsId, date, time });
-      // if (existingAvailability) {
-      //     return res.status(400).json({ error: "This time slot is already added for the therapist." });
-      // }else {
-      //     return res.status(400).json({ error: "The therapists is not added any slot for this time" });
-      // }
   
+      // Check if the therapist already has an availability for the given date and time
+      const existingAvailability = await TherapistAvailability.findOne({
+        therapistsId: therapistData._id,
+        date,
+        time,
+      });
+  
+      if (existingAvailability) {
+        return res.status(400).json({
+          error: "This time slot is already added for the therapist.",
+        });
+      }
+  
+      // Create a new availability entry
       const newAvailability = new TherapistAvailability({
-        therapistsId:terapistData._id,
+        therapistsId: therapistData._id,
         date,
         time,
         status,
-        type,
       });
+  
+      // Save the new availability
       await newAvailability.save();
   
       return res.status(201).json({
@@ -92,11 +103,11 @@ const {
         result: newAvailability,
       });
     } catch (error) {
-      return res
-        .status(500)
-        .json({ error: "Error adding therapist availability." });
+      console.error(error);
+      return res.status(500).json({ error: "Error adding therapist availability." });
     }
   }
+  
   
   async function getTherapistAvailability(req, res) {
     try {
@@ -108,11 +119,37 @@ const {
       if (date) query.date = { $gte: new Date(date) };
   
       const sort = soonest === "true" ? { date: 1, time: 1 } : {};
-  
       const availability = await TherapistAvailability.find(query).sort(sort);
+      
+      // Extract all unique therapist IDs from the availability data
+      const therapistIds = availability.map(item => item.therapistsId);
+      
+      // Fetch all therapists whose IDs match the availability records
+      const therapists = await Therapist.find({ _id: { $in: therapistIds } });
+      // console.log("-- therapists:", therapists);
+      
+      // Create a map of therapist IDs to their details for quick lookup
+      const therapistMap = therapists.reduce((acc, therapist) => {
+        acc[therapist._id] = {
+          email: therapist.email,
+          name: therapist.name,
+          region: therapist.region
+        };
+        return acc;
+      }, {});
+      
+      // Use map to enrich availability data with therapist email and name
+      const AvailabilityData = availability.map(item => ({
+        ...item._doc, // Spread the availability document fields
+        email: therapistMap[item.therapistsId]?.email || null,
+        name: therapistMap[item.therapistsId]?.name || null,
+      }));
+      
+      
+
       return res.status(200).json({
         message: "Available slots fetched successfully",
-        availability,
+        AvailabilityData,
       });
     } catch (error) {
       console.error("Error fetching availability:", error);
