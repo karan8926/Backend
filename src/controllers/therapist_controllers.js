@@ -67,7 +67,7 @@ async function getTherapist(req, res) {
 }
 
 async function AddTherapistAvailability(req, res) {
-  const { email, date, time} = req.body;
+  const { email, date, time, status,appointmentType } = req.body;
 
   // Validate required fields
   if (!email || !date || !time ) {
@@ -102,7 +102,8 @@ async function AddTherapistAvailability(req, res) {
       therapistsId: therapistData._id,
       date,
       time,
-      status: 'none'
+      status:'none',
+      appointmentType
     });
 
     // Save the new availability
@@ -244,7 +245,6 @@ async function getTherapistSpecialtyRegion(req, res) {
     });
   }
 }
-
 module.exports = {
   AddTherapist,
   AddTherapistAvailability,
