@@ -194,7 +194,7 @@ async function sendsms(message) {
 }
 
 async function getPatient(req, res) {
-  const { pageNo } = req.query;
+  const { pageNo } = req.query || 1;
   const limit = 12;
   const offset = (pageNo - 1) * limit;
   try {
@@ -211,6 +211,7 @@ async function getPatient(req, res) {
       message: "Patients retrieved successfully",
       patients,
       noOfPatient: totalPatients,
+      noOfPages: Math.ceil(totalPatients / limit),
     });
   } catch (error) {
     console.error("Error fetching patients:", error);
