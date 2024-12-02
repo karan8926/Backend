@@ -101,7 +101,6 @@ async function pantientSignIn(req, res) {
 async function bookAppointment(req, res) {
   const { therapistsId, date, time, patientEmail, patientNumber } = req.body;
 
-  console.log({ therapistsId, date, time, patientEmail, patientNumber });
   if (!therapistsId || !date || !time || !patientEmail || !patientNumber) {
     return res.status(400).json({ error: "All fields are required." });
   }
@@ -127,11 +126,9 @@ async function bookAppointment(req, res) {
     ]);
 
     if (slot.length === 0) {
-      return res
-        .status(404)
-        .json({
-          error: "No available slot found for the selected date and time.",
-        });
+      return res.status(404).json({
+        error: "No available slot found for the selected date and time.",
+      });
     } else {
       const slotId = slot[0]._id;
       const SaveStatus = await TherapistAvailability.findById(slotId);
