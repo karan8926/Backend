@@ -1,16 +1,16 @@
 const Patient = require("../models/patients_models");
 const generateAccessCode = require("../utils/generateAccessCode");
-const emailValidator = require('email-validator');
-const jwt = require('jsonwebtoken');
-const CryptoJS = require('crypto-js');
-const mongoose = require('mongoose');
+const emailValidator = require("email-validator");
+const jwt = require("jsonwebtoken");
+const CryptoJS = require("crypto-js");
+const mongoose = require("mongoose");
 
-const TherapistAvailability = require("../models/therapist_models").TherapistAvailability;
+const TherapistAvailability =
+  require("../models/therapist_models").TherapistAvailability;
 const Therapist = require("../models/therapist_models").Therapist;
 
-
-const sendMobileMessage = require("../utils/generateMoblieMessage")
-const sendGmailService = require("../utils/generateGmailService")
+const sendMobileMessage = require("../utils/generateMoblieMessage");
+const sendGmailService = require("../utils/generateGmailService");
 
 async function pantientSignUp(req, res) {
   try {
@@ -71,7 +71,8 @@ async function pantientSignIn(req, res) {
 
     const existedPatient = await Patient.findOne({ accessCode });
 
-        if (!existedPatient) return res.status(400).json({ error: 'Invalid access code.' });
+    if (!existedPatient)
+      return res.status(400).json({ error: "Invalid access code." });
 
     const uniqueSecret = CryptoJS.SHA256(existedPatient.accessCode).toString(
       CryptoJS.enc.Base64
@@ -98,60 +99,60 @@ async function pantientSignIn(req, res) {
 }
 
 async function bookAppointment(req, res) {
-    const { therapistsId, date, time, patientEmail, patientNumber } = req.body;
+  const { therapistsId, date, time, patientEmail, patientNumber } = req.body;
 
-    if (!therapistsId || !date || !time || !patientEmail || !patientNumber) {
-        return res.status(400).json({ error: "All fields are required." });
-    }
+  if (!therapistsId || !date || !time || !patientEmail || !patientNumber) {
+    return res.status(400).json({ error: "All fields are required." });
+  }
 
-    try {
-        const slot = await TherapistAvailability.aggregate([
-            {
-             $match: { 
-                therapistsId: new mongoose.Types.ObjectId(therapistsId),
-                date: new Date(date),
-                time: time,
-                status: ''
-            }
-            },
-            {
-              $lookup: {
-                from: "therapists",
-                localField: "therapistsId",
-                foreignField: "_id",
-                as: "therapistDetails",
-              },
-            },
-          ]);
+  try {
+    const slot = await TherapistAvailability.aggregate([
+      {
+        $match: {
+          therapistsId: new mongoose.Types.ObjectId(therapistsId),
+          date: new Date(date),
+          time: time,
+          status: "none",
+        },
+      },
+      {
+        $lookup: {
+          from: "therapists",
+          localField: "therapistsId",
+          foreignField: "_id",
+          as: "therapistDetails",
+        },
+      },
+    ]);
 
-          if (slot.length === 0) {
-            return res.status(404).json({ error: "No available slot found for the selected date and time." });
-          }else {
-            const slotId = slot[0]._id;
-            const SaveStatus = await TherapistAvailability.findById(slotId);
-  
-            SaveStatus.status = 'pending';
-            await SaveStatus.save();
-  
-          const PatientDetails = {
-              patientEmail: patientEmail,
-              date : date,
-              time : time
-          }
-          await sendGmailService(PatientDetails);
-  
-          const message = {
-            date : date,
-            time: time,
-            patientNumber : patientNumber,
-          }
-          await sendMobileMessage(message)
-  
+    if (slot.length === 0) {
+      return res.status(404).json({ error: "No available slot found for the selected date and time." });
+    } else {
+      const slotId = slot[0]._id;
+      const SaveStatus = await TherapistAvailability.findById(slotId);
+
+      SaveStatus.status = 'pending';
+      await SaveStatus.save();
+
+      const PatientDetails = {
+        patientEmail: patientEmail,
+        date: date,
+        time: time
+      }
+      await sendGmailService(PatientDetails);
+
+      const message = {
+        date: date,
+        time: time,
+        patientNumber: patientNumber,
+      }
+      await sendMobileMessage(message)
+
       return res.status(200).json({
         message: "Appointment booked successfully. Confirmation email sent.",
         result: slot,
       });
-  }
+    }
 
   } catch (error) {
     console.error("Error booking appointment:", error);
