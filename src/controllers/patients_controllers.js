@@ -1,19 +1,16 @@
 const Patient = require("../models/patients_models");
 const generateAccessCode = require("../utils/generateAccessCode");
-const emailValidator = require("email-validator");
-const jwt = require("jsonwebtoken");
-const CryptoJS = require("crypto-js");
+const emailValidator = require('email-validator');
+const jwt = require('jsonwebtoken');
+const CryptoJS = require('crypto-js');
+const mongoose = require('mongoose');
 
-const nodemailer = require("nodemailer");
-const TherapistAvailability =
-  require("../models/therapist_models").TherapistAvailability;
+const TherapistAvailability = require("../models/therapist_models").TherapistAvailability;
 const Therapist = require("../models/therapist_models").Therapist;
 
-const twilio = require("twilio");
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const client = twilio(accountSid, authToken);
+const sendMobileMessage = require("../utils/generateMoblieMessage")
+const sendGmailService = require("../utils/generateGmailService")
 
 async function pantientSignUp(req, res) {
   try {
@@ -51,26 +48,7 @@ async function pantientSignUp(req, res) {
 
     await patientResult.save();
 
-    const transporter = nodemailer.createTransport({
-      service: "Gmail",
-      secure: true,
-      port: 465,
-      auth: {
-        user: "satyasandhya.boffinblocks@gmail.com",
-        pass: "xkac gsbq bpns qpnm",
-      },
-    });
-
-    const mailOptions = {
-      from: "satyasandhya.boffinblocks@gmail.com",
-      to: patientResult.email,
-      subject: "Signup successfully ",
-      html: `<p>Your accesscode is <b>${patientResult.accessCode}</b>.</p>
-
-                   <p>Thank you for register with us!</p>`,
-    };
-
-    await transporter.sendMail(mailOptions);
+    await sendMail(mailOptions);
 
     res.status(201).json({
       name: patientResult.name,
@@ -93,10 +71,7 @@ async function pantientSignIn(req, res) {
 
     const existedPatient = await Patient.findOne({ accessCode });
 
-    console.log("existedPatient--", existedPatient);
-
-    if (!existedPatient)
-      return res.status(400).json({ error: "Invalid access code." });
+        if (!existedPatient) return res.status(400).json({ error: 'Invalid access code.' });
 
     const uniqueSecret = CryptoJS.SHA256(existedPatient.accessCode).toString(
       CryptoJS.enc.Base64
@@ -123,55 +98,55 @@ async function pantientSignIn(req, res) {
 }
 
 async function bookAppointment(req, res) {
-  const { therapistsId, date, time, email, status, PatientEmail } = req.body;
+    const { therapistsId, date, time, patientEmail, patientNumber } = req.body;
 
-  if (!date || !time || !email || !status) {
-    return res.status(400).json({ error: "All fields are required." });
-  }
-
-  try {
-    const slot = await TherapistAvailability.findOne({
-      therapistsId: therapistsId,
-    });
-    console.log("slot", slot);
-    if (!slot) {
-      return res.status(404).json({
-        error: "No available slot found for the selected date and time.",
-      });
+    if (!therapistsId || !date || !time || !patientEmail || !patientNumber) {
+        return res.status(400).json({ error: "All fields are required." });
     }
 
-    // Update the slot status to "booked"
-    slot.status = status;
-    await slot.save();
+    try {
+        const slot = await TherapistAvailability.aggregate([
+            {
+             $match: { 
+                therapistsId: new mongoose.Types.ObjectId(therapistsId),
+                date: new Date(date),
+                time: time,
+                status: ''
+            }
+            },
+            {
+              $lookup: {
+                from: "therapists",
+                localField: "therapistsId",
+                foreignField: "_id",
+                as: "therapistDetails",
+              },
+            },
+          ]);
 
-    const transporter = nodemailer.createTransport({
-      service: "Gmail",
-      secure: true,
-      port: 465,
-      auth: {
-        user: "satyasandhya.boffinblocks@gmail.com",
-        pass: "xkac gsbq bpns qpnm",
-      },
-    });
+          if (!slot) {
+            return res.status(404).json({ error: "No available slot found for the selected date and time." });
+          }
 
-    const mailOptions = {
-      from: "satyasandhya.boffinblocks@gmail.com",
-      to: PatientEmail,
-      subject: "Booked Appointment Successfully and wait for Confirmation",
-      html: `<p>Your appointment is confirmed.</p>
-                   <p><b>Date:</b> ${date}</p>
-                   <p><b>Time:</b> ${time}</p>
-                   <p>Thank you for booking with us!</p>`,
-    };
+          const slotId = slot[0]._id;
+          const SaveStatus = await TherapistAvailability.findById(slotId);
 
-    await transporter.sendMail(mailOptions);
+          SaveStatus.status = 'pending';
+          await SaveStatus.save();
 
-    // const message = {
-    //   date : date,
-    //   time: time,
-    //   phone_number : PatientPhoneNumber,
-    // }
-    // await sendsms(message)
+        const PatientDetails = {
+            patientEmail: patientEmail,
+            date : date,
+            time : time
+        }
+        await sendGmailService(PatientDetails);
+
+        const message = {
+          date : date,
+          time: time,
+          patientNumber : patientNumber,
+        }
+        await sendMobileMessage(message)
 
     return res.status(200).json({
       message: "Appointment booked successfully. Confirmation email sent.",
@@ -183,15 +158,6 @@ async function bookAppointment(req, res) {
   }
 }
 
-async function sendsms(message) {
-  console.log(message);
-  const response = await client.messages.create({
-    body: `Your appointment with ${message.name} is confirmed for ${message.date} at ${message.time}.`,
-    from: "+1 775 320 8517",
-    to: `+91${message.phone_number}`,
-  });
-  console.log("sms sending successfully", response.sid);
-}
 
 async function getPatient(req, res) {
   const { pageNo } = req.query || 1;

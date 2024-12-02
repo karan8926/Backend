@@ -6,9 +6,9 @@ const jwt = require("jsonwebtoken");
 
 //admin added the therapist details
 async function AddTherapist(req, res) {
-  const { name, email, number, region, password } = req.body;
+  const { name, email, number,specialty, region, password } = req.body;
 
-  if (!name || !email || !number || !region || !password) {
+  if (!name || !email || !number || !specialty || !region || !password) {
     return res.status(400).json({ error: "All fields are required." });
   }
 
@@ -27,6 +27,7 @@ async function AddTherapist(req, res) {
       name,
       email,
       number,
+      specialty,
       region,
       password,
     });
@@ -66,10 +67,10 @@ async function getTherapist(req, res) {
 }
 
 async function AddTherapistAvailability(req, res) {
-  const { email, date, time, status } = req.body;
+  const { email, date, time} = req.body;
 
   // Validate required fields
-  if (!email || !date || !time || !status) {
+  if (!email || !date || !time ) {
     return res.status(400).json({
       error: "All fields are required.",
     });
@@ -78,9 +79,9 @@ async function AddTherapistAvailability(req, res) {
   try {
     // Find the therapist using the provided email
     const therapistData = await Therapist.findOne({ email });
-    console.log("therapistData", therapistData);
+
     if (!therapistData) {
-      return res.status(404).json({ error: "Therapist not found." });
+      return res.status(404).json({ error: "Therapist not found."});
     }
 
     // Check if the therapist already has an availability for the given date and time
@@ -101,7 +102,7 @@ async function AddTherapistAvailability(req, res) {
       therapistsId: therapistData._id,
       date,
       time,
-      status,
+      status: 'none'
     });
 
     // Save the new availability
@@ -113,57 +114,81 @@ async function AddTherapistAvailability(req, res) {
     });
   } catch (error) {
     console.error(error);
-    return res
-      .status(500)
-      .json({ error: "Error adding therapist availability." });
+    return res.status(500).json({ error: "Error adding therapist availability." });
   }
 }
 
 async function getTherapistAvailability(req, res) {
   try {
-    const { therapistId, date, soonest, region, status } = req.query;
+    const { email, name, number, therapistId,specialty, soonest, date, region, status } = req.query;
+    const pageNo = parseInt(req.query.pageNo) || 1; 
+    const limit = parseInt(req.query.pageSize) || 12; 
+    const offset = (pageNo - 1) * limit;
+
+    let therapistquery = {};
     let query = {};
+
+    // Filter by therapist collection
+    if (region) therapistquery.region = region;
+    if (name) therapistquery.name = name;
+    if (email) therapistquery.email = email;
+    if (number) therapistquery.phone_number = number;
+    if(specialty) therapistquery.specialty = specialty;
+
+    // Filter by therapistAvailability collection
     if (therapistId) query.therapistsId = therapistId;
-    if (region) query.region = region;
     if (status) query.status = status;
-    if (date) query.date = { $gte: new Date(date) };
 
-    const sort = soonest === "true" ? { date: 1, time: 1 } : {};
-    const availability = await TherapistAvailability.find(query).sort(sort);
+    // Handle soonest date filter (12hr or 24hr)
+    if (soonest === "12hr") {
+      query.date = { $gte: new Date(Date.now() - 12 * 60 * 60 * 1000) };
+    } else if (soonest === "24hr") {
+      query.date = { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) };
+    } else if (date) {
+      query.date = new Date(date);
+    }
 
-    // Extract all unique therapist IDs from the availability data
-    const therapistIds = availability.map((item) => item.therapistsId);
+    // Filter therapists
+    const filteredTherapists = await Therapist.aggregate([
+      { $match: therapistquery }
+    ]);
 
-    // Fetch all therapists whose IDs match the availability records
-    const therapists = await Therapist.find({ _id: { $in: therapistIds } });
-    // console.log("-- therapists:", therapists);
+    let availabilityData = [];
 
-    // Create a map of therapist IDs to their details for quick lookup
-    const therapistMap = therapists.reduce((acc, therapist) => {
-      acc[therapist._id] = {
-        email: therapist.email,
-        name: therapist.name,
-        region: therapist.region,
-      };
-      return acc;
-    }, {});
+    for (let i = 0; i < filteredTherapists.length; i++) {
+      query.therapistsId = filteredTherapists[i]._id;
+      const data = await TherapistAvailability.aggregate([
+        { $match: query },
+        {
+          $lookup: {
+            from: "therapists",
+            localField: "therapistsId",
+            foreignField: "_id",
+            as: "therapistDetails",
+          },
+        },
+      ]);
+      availabilityData = [...availabilityData, ...data];
+    }
 
-    // Use map to enrich availability data with therapist email and name
-    const AvailabilityData = availability.map((item) => ({
-      ...item._doc, // Spread the availability document fields
-      email: therapistMap[item.therapistsId]?.email || null,
-      name: therapistMap[item.therapistsId]?.name || null,
-    }));
+    // Pagination logic
+    const totalItems = availabilityData.length;
+    const paginatedData = availabilityData.slice(offset, offset + limit);
 
     return res.status(200).json({
       message: "Available slots fetched successfully",
-      AvailabilityData,
+      totalItems,
+      // totalPages: Math.ceil(totalItems / limit), 
+      currentPage: pageNo,
+      pageSize: limit,
+      appointmentData: paginatedData,
     });
   } catch (error) {
     console.error("Error fetching availability:", error);
     return res.status(500).json({ error: "Error fetching availability" });
   }
 }
+
 
 async function loginTherapist(req, res) {
   try {
@@ -201,21 +226,21 @@ async function loginTherapist(req, res) {
   }
 }
 
-async function getTherapistNameRegion(req, res) {
+async function getTherapistSpecialtyRegion(req, res) {
   try {
-    const therapistNames = await Therapist.distinct("name");
+    const therapistSpecialty = await Therapist.distinct("specialty");
     const therapistRegion = await Therapist.distinct("region");
-
+    
     res.status(200).json({
       success: true,
-      name: therapistNames,
-      region: therapistRegion,
+      specialty: therapistSpecialty,
+      region: therapistRegion
     });
   } catch (error) {
-    console.error("Error fetching therapist names:", error);
+    console.error("Error fetching therapist specialty:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to fetch therapist names",
+      message: "Failed to fetch therapist specialty",
     });
   }
 }
@@ -226,5 +251,5 @@ module.exports = {
   getTherapistAvailability,
   loginTherapist,
   getTherapist,
-  getTherapistNameRegion,
+  getTherapistSpecialtyRegion
 };

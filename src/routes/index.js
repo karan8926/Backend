@@ -1,6 +1,6 @@
 const {Router} = require('express');
 const { pantientSignUp , pantientSignIn , bookAppointment , getPatient} = require('../controllers/patients_controllers');
-const {AddTherapist, getTherapist , AddTherapistAvailability, getTherapistAvailability, loginTherapist, getTherapistNameRegion} = require('../controllers/therapist_controllers');
+const {AddTherapist, getTherapist , AddTherapistAvailability, getTherapistAvailability, loginTherapist, getTherapistSpecialtyRegion} = require('../controllers/therapist_controllers');
 const {loginAdmin } = require('../controllers/admin_controllers');
 
 const router = Router();
@@ -21,7 +21,7 @@ router.post("/book-appointment", bookAppointment);
 router.post("/admin-login",loginAdmin )
 router.post("/therapist-login", loginTherapist )
 
-router.get("/getTherapistNameRegion", getTherapistNameRegion);
+router.get("/getTherapistSpecialtyRegion", getTherapistSpecialtyRegion);
 
 
 
