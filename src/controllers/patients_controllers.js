@@ -124,40 +124,66 @@ async function bookAppointment(req, res) {
             },
           ]);
 
-          if (!slot) {
+          if (slot.length === 0) {
             return res.status(404).json({ error: "No available slot found for the selected date and time." });
+          }else {
+            const slotId = slot[0]._id;
+            const SaveStatus = await TherapistAvailability.findById(slotId);
+  
+            SaveStatus.status = 'pending';
+            await SaveStatus.save();
+  
+          const PatientDetails = {
+              patientEmail: patientEmail,
+              date : date,
+              time : time
           }
-
-          const slotId = slot[0]._id;
-          const SaveStatus = await TherapistAvailability.findById(slotId);
-
-          SaveStatus.status = 'pending';
-          await SaveStatus.save();
-
-        const PatientDetails = {
-            patientEmail: patientEmail,
+          await sendGmailService(PatientDetails);
+  
+          const message = {
             date : date,
-            time : time
-        }
-        await sendGmailService(PatientDetails);
+            time: time,
+            patientNumber : patientNumber,
+          }
+          await sendMobileMessage(message)
+  
+      return res.status(200).json({
+        message: "Appointment booked successfully. Confirmation email sent.",
+        result: slot,
+      });
+  }
 
-        const message = {
-          date : date,
-          time: time,
-          patientNumber : patientNumber,
-        }
-        await sendMobileMessage(message)
-
-    return res.status(200).json({
-      message: "Appointment booked successfully. Confirmation email sent.",
-      result: slot,
-    });
   } catch (error) {
     console.error("Error booking appointment:", error);
     return res.status(500).json({ error: "Error booking appointment" });
   }
 }
 
+async function allAppointment(req, res) {
+  const { pageNo } = req.query || 1;
+  const limit = 12;
+  const offset = (pageNo - 1) * limit;
+  try {
+    const AppointmentData = await TherapistAvailability.find()
+      .limit(limit)
+      .skip(offset)
+      .sort({ createdAt: -1 });
+
+    if (AppointmentData.length === 0) {
+      return res.status(404).json({ message: "No Appointment found" });
+    }
+    const totalAppointment = await TherapistAvailability.countDocuments();
+    res.status(200).json({
+      message: "All Appointment retrieved successfully",
+      AppointmentData,
+      noOfPatient: totalAppointment,
+      noOfPages: Math.ceil(totalAppointment / limit),
+    });
+  } catch (error) {
+    console.error("Error fetching Appointment:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+}
 
 async function getPatient(req, res) {
   const { pageNo } = req.query || 1;
@@ -189,5 +215,6 @@ module.exports = {
   pantientSignUp,
   pantientSignIn,
   bookAppointment,
+  allAppointment,
   getPatient,
 };
