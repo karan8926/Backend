@@ -57,8 +57,8 @@ async function pantientSignUp(req, res) {
       secure: true,
       port: 465,
       auth: {
-        user: process.env.FROM_GMAIL, 
-        pass: process.env.GMAIL_PASS_KEY,
+        user: "info66441@gmail.com", 
+        pass: "hgqa fxvm ddiz fido",
       },
     });
 

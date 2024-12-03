@@ -3,6 +3,7 @@ const {
   TherapistAvailability,
 } = require("../models/therapist_models");
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
 
 //admin added the therapist details
 async function AddTherapist(req, res) {
@@ -257,6 +258,137 @@ async function getTherapistSpecialtyRegion(req, res) {
     });
   }
 }
+
+async function getTherapistDetailsByIdAndStatus(req, res) {
+  try {
+    const { therapistId } = req.query;
+    const pageNo = parseInt(req.query.pageNo) || 1;
+    const limit = parseInt(req.query.pageSize) || 12;
+    const offset = (pageNo - 1) * limit;
+
+    if (!therapistId) {
+      return res.status(400).json({ error: "therapistId is required." });
+    }
+
+    let filter = { status: { $ne: "none" } };
+
+    if (mongoose.Types.ObjectId.isValid(therapistId)) {
+      filter.therapistsId = new mongoose.Types.ObjectId(therapistId);
+    } else {
+      return res.status(400).json({ error: "Invalid therapistId format." });
+    }
+
+    const totalItems = await TherapistAvailability.countDocuments(filter);
+
+    const result = await TherapistAvailability.aggregate([
+      { $match: filter }, 
+      {
+        $lookup: {
+          from: "therapists", 
+          localField: "therapistsId",
+          foreignField: "_id", 
+          as: "therapistDetails",
+        },
+      },
+    ]).skip(offset)
+      .limit(limit); 
+    
+    if (!result.length) {
+      return res.status(404).json({ message: "Data is not found." });
+    }
+
+    return res.status(200).json({
+      message: "Available data fetched successfully",
+      totalItems,
+      totalPages: Math.ceil(totalItems / limit),
+      currentPage: pageNo,
+      result,
+    });
+  } catch (error) {
+    console.error("Error fetching therapist:", error);
+    return res.status(500).json({ error: "Error fetching therapist" });
+  }
+}
+
+async function getTherapistDetailsById(req, res){
+  try {
+    const { therapistId } = req.query;
+    const pageNo = parseInt(req.query.pageNo) || 1;
+    const limit = parseInt(req.query.pageSize) || 12;
+    const offset = (pageNo - 1) * limit;
+
+    if (!therapistId) {
+      return res.status(400).json({ error: "therapistId is required." });
+    }
+
+    let filter = {};
+
+    if (mongoose.Types.ObjectId.isValid(therapistId)) {
+      filter.therapistsId = new mongoose.Types.ObjectId(therapistId);
+    } else {
+      return res.status(400).json({ error: "Invalid therapistId format." });
+    }
+
+    const totalItems = await TherapistAvailability.countDocuments(filter);
+
+    const result = await TherapistAvailability.aggregate([
+      { $match: filter }, 
+      {
+        $lookup: {
+          from: "therapists", 
+          localField: "therapistsId",
+          foreignField: "_id", 
+          as: "therapistDetails",
+        },
+      },
+    ]).skip(offset)
+      .limit(limit); 
+    
+    if (!result.length) {
+      return res.status(404).json({ message: "data is not found." });
+    }
+
+    return res.status(200).json({
+      message: "Available data fetched successfully",
+      totalItems,
+      totalPages: Math.ceil(totalItems / limit),
+      currentPage: pageNo,
+      result,
+    });
+  } catch (error) {
+    console.error("Error fetching therapist:", error);
+    return res.status(500).json({ error: "Error fetching therapist" });
+  }
+}
+
+const updateAppointmentStatus = async (req, res) => {
+  try {
+    const { id, status } = req.body;
+
+    const existingResult = await TherapistAvailability.findOne({ _id: id });
+
+    if (!existingResult) {
+      return res.status(404).json({ message: "Therapist is not found" });
+    }
+
+    const updatedResult = await TherapistAvailability.findOneAndUpdate(
+      { _id: id },
+      { status },
+      { new: true } 
+    );
+
+
+    res.status(200).json({
+      message: "Appointment status updated successfully",
+      updatedResult,
+    });
+  } catch (error) {
+    console.error("Error updating appointment status:", error);
+    res.status(500).json({ message: "Internal server error", error });
+  }
+};
+
+
 module.exports = {
   AddTherapist,
   AddTherapistAvailability,
@@ -264,4 +396,7 @@ module.exports = {
   loginTherapist,
   getTherapist,
   getTherapistSpecialtyRegion,
+  updateAppointmentStatus,
+  getTherapistDetailsByIdAndStatus,
+  getTherapistDetailsById
 };
