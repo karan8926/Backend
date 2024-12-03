@@ -135,9 +135,9 @@ async function getTherapistAvailability(req, res) {
       region,
       status,
     } = req.query;
-    const pageNo = parseInt(req.query.pageNo) || 1;
-    const limit = parseInt(req.query.pageSize) || 12;
-    const offset = (pageNo - 1) * limit;
+    const pageData = parseInt(req.query.pageNo) || 1;
+    const limit = 6;
+    const offset = (pageData - 1) * limit;
 
     let therapistquery = {};
     let query = {};
@@ -193,7 +193,7 @@ async function getTherapistAvailability(req, res) {
       message: "Available slots fetched successfully",
       totalItems,
       // totalPages: Math.ceil(totalItems / limit),
-      currentPage: pageNo,
+      currentPage: pageData,
       pageSize: limit,
       appointmentData: paginatedData,
     });
