@@ -191,10 +191,11 @@ async function bookAppointment(req, res) {
 }
 
 async function allAppointment(req, res) {
-  const { pageNo = 1 } = req.query = 1; 
-  const limit = 12; 
-  const offset = (pageNo - 1) * limit; 
+  const pageNo = req.query.pageNo || 1;
+  const limit = 12;
+  const offset = (pageNo - 1) * limit;
 
+  console.log(pageNo, limit, offset);
   try {
     const AppointmentData = await TherapistAvailability.aggregate([
       {
@@ -205,9 +206,10 @@ async function allAppointment(req, res) {
           as: "therapistDetails",
         },
       },
-      { $skip: offset }, 
-      { $limit: limit }, 
-    ]);
+    ])
+      .skip(offset)
+      .limit(limit);
+    console.log(AppointmentData.length, "length");
 
     if (AppointmentData.length === 0) {
       return res.status(404).json({ message: "No Appointment found" });
