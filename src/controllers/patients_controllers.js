@@ -12,6 +12,9 @@ const Therapist = require("../models/therapist_models").Therapist;
 const sendMobileMessage = require("../utils/generateMoblieMessage");
 const sendGmailService = require("../utils/generateGmailService");
 
+const nodemailer = require("nodemailer");
+require('dotenv').config();
+
 async function pantientSignUp(req, res) {
   try {
     const { name, phone_number, email } = req.body;
@@ -21,6 +24,7 @@ async function pantientSignUp(req, res) {
         .status(400)
         .json({ error: "Name, number, and email are required." });
     }
+
     const phoneRegex = /^\d{10}$/;
     if (!phoneRegex.test(phone_number)) {
       return res
@@ -48,7 +52,32 @@ async function pantientSignUp(req, res) {
 
     await patientResult.save();
 
-    await sendMail(mailOptions);
+    const transporter = nodemailer.createTransport({
+      service: "Gmail",
+      secure: true,
+      port: 465,
+      auth: {
+        user: process.env.FROM_GMAIL, 
+        pass: process.env.GMAIL_PASS_KEY,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.FROM_GMAIL,
+      to: patientResult.email, 
+      subject: "Registered Successfully",
+      html: `<p>Your Access Code is: <strong>${patientResult.accessCode}</strong></p>
+             <p>Thank you for register with us!</p>`,
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+    } catch (emailError) {
+      console.error("Error sending email:", emailError);
+      return res
+        .status(500)
+        .json({ error: "Error sending confirmation email. Please try again." });
+    }
 
     res.status(201).json({
       name: patientResult.name,
@@ -58,6 +87,7 @@ async function pantientSignUp(req, res) {
       type: patientResult.type,
     });
   } catch (error) {
+    console.error("Error during patient signup:", error);
     res.status(500).json({ error: "Server error. Please try again later." });
   }
 }
@@ -161,23 +191,35 @@ async function bookAppointment(req, res) {
 }
 
 async function allAppointment(req, res) {
-  const { pageNo } = req.query || 1;
-  const limit = 12;
-  const offset = (pageNo - 1) * limit;
+  const { pageNo } = req.query || 1; 
+  const limit = 12; 
+  const offset = (pageNo - 1) * limit; 
+
   try {
-    const AppointmentData = await TherapistAvailability.find()
-      .limit(limit)
-      .skip(offset)
-      .sort({ createdAt: -1 });
+    const AppointmentData = await TherapistAvailability.aggregate([
+      {
+        $lookup: {
+          from: "therapists",
+          localField: "therapistsId",
+          foreignField: "_id",
+          as: "therapistDetails",
+        },
+      },
+      { $skip: offset }, 
+      { $limit: limit }, 
+    ]);
 
     if (AppointmentData.length === 0) {
       return res.status(404).json({ message: "No Appointment found" });
     }
+
     const totalAppointment = await TherapistAvailability.countDocuments();
+
     res.status(200).json({
       message: "All Appointment retrieved successfully",
       AppointmentData,
-      noOfPatient: totalAppointment,
+      totalAppointments: totalAppointment,
+      currentPage: Number(pageNo),
       noOfPages: Math.ceil(totalAppointment / limit),
     });
   } catch (error) {
@@ -185,6 +227,7 @@ async function allAppointment(req, res) {
     res.status(500).json({ message: "Server error", error });
   }
 }
+
 
 async function getPatient(req, res) {
   const { pageNo } = req.query || 1;
