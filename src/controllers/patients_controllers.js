@@ -156,34 +156,35 @@ async function bookAppointment(req, res) {
     ]);
 
     if (slot.length === 0) {
-      return res.status(404).json({ error: "No available slot found for the selected date and time." });
+      return res.status(404).json({
+        error: "No available slot found for the selected date and time.",
+      });
     } else {
       const slotId = slot[0]._id;
       const SaveStatus = await TherapistAvailability.findById(slotId);
 
-      SaveStatus.status = 'pending';
+      SaveStatus.status = "pending";
       await SaveStatus.save();
 
       const PatientDetails = {
         patientEmail: patientEmail,
         date: date,
-        time: time
-      }
+        time: time,
+      };
       await sendGmailService(PatientDetails);
 
       const message = {
         date: date,
         time: time,
         patientNumber: patientNumber,
-      }
-      await sendMobileMessage(message)
+      };
+      await sendMobileMessage(message);
 
       return res.status(200).json({
         message: "Appointment booked successfully. Confirmation email sent.",
         result: slot,
       });
     }
-
   } catch (error) {
     console.error("Error booking appointment:", error);
     return res.status(500).json({ error: "Error booking appointment" });

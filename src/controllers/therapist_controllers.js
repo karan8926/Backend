@@ -67,7 +67,8 @@ async function getTherapist(req, res) {
 }
 
 async function AddTherapistAvailability(req, res) {
-  const { email, date, time, status, appointmentType } = req.body;
+  const { email, date, time, appointmentType } = req.body;
+  console.log(req.body);
 
   // Validate required fields
   if (!email || !date || !time) {
