@@ -13,7 +13,7 @@ const sendMobileMessage = require("../utils/generateMoblieMessage");
 const sendGmailService = require("../utils/generateGmailService");
 
 const nodemailer = require("nodemailer");
-require('dotenv').config();
+require("dotenv").config();
 
 async function pantientSignUp(req, res) {
   try {
@@ -57,14 +57,14 @@ async function pantientSignUp(req, res) {
       secure: true,
       port: 465,
       auth: {
-        user: "info66441@gmail.com", 
+        user: "info66441@gmail.com",
         pass: "hgqa fxvm ddiz fido",
       },
     });
 
     const mailOptions = {
       from: process.env.FROM_GMAIL,
-      to: patientResult.email, 
+      to: patientResult.email,
       subject: "Registered Successfully",
       html: `<p>Your Access Code is: <strong>${patientResult.accessCode}</strong></p>
              <p>Thank you for register with us!</p>`,
@@ -129,7 +129,7 @@ async function pantientSignIn(req, res) {
 }
 
 async function bookAppointment(req, res) {
-  const { therapistsId, date, time, patientEmail, patientNumber} = req.body;
+  const { therapistsId, date, time, patientEmail, patientNumber } = req.body;
 
   if (!therapistsId || !date || !time || !patientEmail || !patientNumber) {
     return res.status(400).json({ error: "All fields are required." });
@@ -156,38 +156,39 @@ async function bookAppointment(req, res) {
     ]);
 
     if (slot.length === 0) {
-      return res.status(404).json({ error: "No available slot found for the selected date and time." });
+      return res.status(404).json({
+        error: "No available slot found for the selected date and time.",
+      });
     } else {
       const slotId = slot[0]._id;
       const SaveStatus = await TherapistAvailability.findById(slotId);
 
       const patientsDetails = await Patient.find({ email: patientEmail });
 
-      SaveStatus.status = 'Pending';
-      SaveStatus.patientsId = patientsDetails[0]._id
+      SaveStatus.status = "Pending";
+      SaveStatus.patientsId = patientsDetails[0]._id;
 
       await SaveStatus.save();
 
       const PatientDetails = {
         patientEmail: patientEmail,
         date: date,
-        time: time
-      }
+        time: time,
+      };
       await sendGmailService(PatientDetails);
 
       const message = {
         date: date,
         time: time,
         patientNumber: patientNumber,
-      }
-      await sendMobileMessage(message)
+      };
+      await sendMobileMessage(message);
 
       return res.status(200).json({
         message: "Appointment booked successfully. Confirmation email sent.",
         result: slot,
       });
     }
-
   } catch (error) {
     console.error("Error booking appointment:", error);
     return res.status(500).json({ error: "Error booking appointment" });
@@ -212,9 +213,9 @@ async function allAppointment(req, res) {
       },
       {
         $lookup: {
-          from: "patients", 
+          from: "patients",
           localField: "patientsId",
-          foreignField: "_id", 
+          foreignField: "_id",
           as: "patientDetails",
         },
       },
@@ -242,7 +243,6 @@ async function allAppointment(req, res) {
   }
 }
 
-
 async function getPatient(req, res) {
   const { pageNo } = req.query || 1;
   const limit = 12;
@@ -269,7 +269,7 @@ async function getPatient(req, res) {
   }
 }
 
-async function getPatientDetailsById(req, res){
+async function getPatientDetailsById(req, res) {
   try {
     const { patientId } = req.query;
     const pageNo = parseInt(req.query.pageNo) || 1;
@@ -291,12 +291,12 @@ async function getPatientDetailsById(req, res){
     const totalItems = await TherapistAvailability.countDocuments(filter);
 
     const result = await TherapistAvailability.aggregate([
-      { $match: filter }, 
+      { $match: filter },
       {
         $lookup: {
-          from: "patients", 
+          from: "patients",
           localField: "patientsId",
-          foreignField: "_id", 
+          foreignField: "_id",
           as: "patientDetails",
         },
       },
@@ -308,10 +308,11 @@ async function getPatientDetailsById(req, res){
           as: "therapistDetails",
         },
       },
-    ]).skip(offset)
-      .limit(limit); 
+    ])
+      .skip(offset)
+      .limit(limit);
 
-      if (!result.length) {
+    if (!result.length) {
       return res.status(404).json({ message: "data is not found." });
     }
 
@@ -326,7 +327,6 @@ async function getPatientDetailsById(req, res){
     console.error("Error fetching patient:", error);
     return res.status(500).json({ error: "Error fetching patient" });
   }
-
 }
 
 module.exports = {
@@ -335,5 +335,5 @@ module.exports = {
   bookAppointment,
   allAppointment,
   getPatient,
-  getPatientDetailsById
+  getPatientDetailsById,
 };
