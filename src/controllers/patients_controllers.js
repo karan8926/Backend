@@ -163,7 +163,7 @@ async function bookAppointment(req, res) {
 
       const patientsDetails = await Patient.find({ email: patientEmail });
 
-      SaveStatus.status = 'pending';
+      SaveStatus.status = 'Pending';
       SaveStatus.patientsId = patientsDetails[0]._id
 
       await SaveStatus.save();
@@ -208,6 +208,14 @@ async function allAppointment(req, res) {
           localField: "therapistsId",
           foreignField: "_id",
           as: "therapistDetails",
+        },
+      },
+      {
+        $lookup: {
+          from: "patients", 
+          localField: "patientsId",
+          foreignField: "_id", 
+          as: "patientDetails",
         },
       },
     ])
