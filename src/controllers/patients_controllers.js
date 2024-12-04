@@ -129,7 +129,7 @@ async function pantientSignIn(req, res) {
 }
 
 async function bookAppointment(req, res) {
-  const { therapistsId, date, time, patientEmail, patientNumber } = req.body;
+  const { therapistsId, date, time, patientEmail, patientNumber} = req.body;
 
   if (!therapistsId || !date || !time || !patientEmail || !patientNumber) {
     return res.status(400).json({ error: "All fields are required." });
@@ -161,7 +161,11 @@ async function bookAppointment(req, res) {
       const slotId = slot[0]._id;
       const SaveStatus = await TherapistAvailability.findById(slotId);
 
+      const patientsDetails = await Patient.find({ email: patientEmail });
+
       SaveStatus.status = 'pending';
+      SaveStatus.patientsId = patientsDetails[0]._id
+
       await SaveStatus.save();
 
       const PatientDetails = {
@@ -257,10 +261,63 @@ async function getPatient(req, res) {
   }
 }
 
+async function getPatientDetailsById(req, res){
+  try {
+    const { patientId } = req.query;
+    const pageNo = parseInt(req.query.pageNo) || 1;
+    const limit = parseInt(req.query.pageSize) || 12;
+    const offset = (pageNo - 1) * limit;
+
+    if (!patientId) {
+      return res.status(400).json({ error: "patientId is required." });
+    }
+
+    let filter = {};
+
+    if (mongoose.Types.ObjectId.isValid(patientId)) {
+      filter.patientsId = new mongoose.Types.ObjectId(patientId);
+    } else {
+      return res.status(400).json({ error: "Invalid patientId format." });
+    }
+
+    const totalItems = await TherapistAvailability.countDocuments(filter);
+
+    const result = await TherapistAvailability.aggregate([
+      { $match: filter }, 
+      {
+        $lookup: {
+          from: "patients", 
+          localField: "patientsId",
+          foreignField: "_id", 
+          as: "patientDetails",
+        },
+      },
+    ]).skip(offset)
+      .limit(limit); 
+
+      if (!result.length) {
+      return res.status(404).json({ message: "data is not found." });
+    }
+
+    return res.status(200).json({
+      message: "Available data fetched successfully",
+      totalItems,
+      totalPages: Math.ceil(totalItems / limit),
+      currentPage: pageNo,
+      result,
+    });
+  } catch (error) {
+    console.error("Error fetching patient:", error);
+    return res.status(500).json({ error: "Error fetching patient" });
+  }
+
+}
+
 module.exports = {
   pantientSignUp,
   pantientSignIn,
   bookAppointment,
   allAppointment,
   getPatient,
+  getPatientDetailsById
 };

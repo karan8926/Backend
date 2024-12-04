@@ -1,5 +1,5 @@
 const {Router} = require('express');
-const { pantientSignUp , pantientSignIn , bookAppointment , getPatient, allAppointment} = require('../controllers/patients_controllers');
+const { pantientSignUp , pantientSignIn , bookAppointment , getPatient, allAppointment, getPatientDetailsById} = require('../controllers/patients_controllers');
 const {AddTherapist, getTherapist , AddTherapistAvailability, getTherapistAvailability, 
     loginTherapist, getTherapistSpecialtyRegion, updateAppointmentStatus, getTherapistDetailsByIdAndStatus,
     getTherapistDetailsById} = require('../controllers/therapist_controllers');
@@ -19,8 +19,11 @@ router.post('/AddTherapistAvailability', AddTherapistAvailability);
 router.get("/getTherapistAvailability", getTherapistAvailability);
 
 //get therapist details with by id
-router.get("/getTherapistDetailsByIdAndStatus", getTherapistDetailsByIdAndStatus)
-router.get("/getTherapistDetailsById", getTherapistDetailsById)
+router.get("/getTherapistDetailsByIdAndStatus", getTherapistDetailsByIdAndStatus);
+router.get("/getTherapistDetailsById", getTherapistDetailsById);
+
+router.get("/getPatientById", getPatientDetailsById)
+
 
 router.post("/book-appointment", bookAppointment);
 router.get("/allAppointment", allAppointment);

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const patient = require("./patients_models")
 
 const therapistSchema = new mongoose.Schema({
   name: {
@@ -39,6 +40,11 @@ const therapistAvailabilitySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       required: true,
       ref: "Therapist",
+    },
+    patientsId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: false,
+      ref: "patient",
     },
     date: {
       type: Date,
