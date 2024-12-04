@@ -30,7 +30,7 @@ const therapistSchema = new mongoose.Schema({
     type: String,
     default: "Therapist",
   },
-});
+},{ timestamps: true });
 
 const Therapist = mongoose.model("Therapist", therapistSchema);
 
