@@ -348,6 +348,14 @@ async function getTherapistDetailsById(req, res) {
           as: "therapistDetails",
         },
       },
+      {
+        $lookup: {
+          from: "patients", 
+          localField: "patientsId",
+          foreignField: "_id", 
+          as: "patientDetails",
+        },
+      }
     ])
       .skip(offset)
       .limit(limit);
