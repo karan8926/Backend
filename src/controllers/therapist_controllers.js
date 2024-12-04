@@ -137,7 +137,7 @@ async function getTherapistAvailability(req, res) {
       status,
     } = req.query;
     const pageData = parseInt(req.query.pageNo) || 1;
-    const limit = 6;
+    const limit = 12;
     const offset = (pageData - 1) * limit;
 
     let therapistquery = {};
@@ -193,9 +193,8 @@ async function getTherapistAvailability(req, res) {
     return res.status(200).json({
       message: "Available slots fetched successfully",
       totalItems,
-      // totalPages: Math.ceil(totalItems / limit),
+      totalPages: Math.ceil(totalItems / limit),
       currentPage: pageData,
-      pageSize: limit,
       appointmentData: paginatedData,
     });
   } catch (error) {
@@ -263,7 +262,7 @@ async function getTherapistDetailsByIdAndStatus(req, res) {
   try {
     const { therapistId } = req.query;
     const pageNo = parseInt(req.query.pageNo) || 1;
-    const limit = parseInt(req.query.pageSize) || 12;
+    const limit = 12;
     const offset = (pageNo - 1) * limit;
 
     if (!therapistId) {
@@ -281,12 +280,12 @@ async function getTherapistDetailsByIdAndStatus(req, res) {
     const totalItems = await TherapistAvailability.countDocuments(filter);
 
     const result = await TherapistAvailability.aggregate([
-      { $match: filter }, 
+      { $match: filter },
       {
         $lookup: {
-          from: "therapists", 
+          from: "therapists",
           localField: "therapistsId",
-          foreignField: "_id", 
+          foreignField: "_id",
           as: "therapistDetails",
         },
       },
@@ -318,11 +317,11 @@ async function getTherapistDetailsByIdAndStatus(req, res) {
   }
 }
 
-async function getTherapistDetailsById(req, res){
+async function getTherapistDetailsById(req, res) {
   try {
     const { therapistId } = req.query;
     const pageNo = parseInt(req.query.pageNo) || 1;
-    const limit = parseInt(req.query.pageSize) || 12;
+    const limit = 12;
     const offset = (pageNo - 1) * limit;
 
     if (!therapistId) {
@@ -340,18 +339,19 @@ async function getTherapistDetailsById(req, res){
     const totalItems = await TherapistAvailability.countDocuments(filter);
 
     const result = await TherapistAvailability.aggregate([
-      { $match: filter }, 
+      { $match: filter },
       {
         $lookup: {
-          from: "therapists", 
+          from: "therapists",
           localField: "therapistsId",
-          foreignField: "_id", 
+          foreignField: "_id",
           as: "therapistDetails",
         },
       },
-    ]).skip(offset)
-      .limit(limit); 
-    
+    ])
+      .skip(offset)
+      .limit(limit);
+
     if (!result.length) {
       return res.status(404).json({ message: "data is not found." });
     }
@@ -382,9 +382,8 @@ const updateAppointmentStatus = async (req, res) => {
     const updatedResult = await TherapistAvailability.findOneAndUpdate(
       { _id: id },
       { status },
-      { new: true } 
+      { new: true }
     );
-
 
     res.status(200).json({
       message: "Appointment status updated successfully",
@@ -396,7 +395,6 @@ const updateAppointmentStatus = async (req, res) => {
   }
 };
 
-
 module.exports = {
   AddTherapist,
   AddTherapistAvailability,
@@ -406,5 +404,5 @@ module.exports = {
   getTherapistSpecialtyRegion,
   updateAppointmentStatus,
   getTherapistDetailsByIdAndStatus,
-  getTherapistDetailsById
+  getTherapistDetailsById,
 };
