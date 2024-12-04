@@ -4,6 +4,7 @@ const {AddTherapist, getTherapist , AddTherapistAvailability, getTherapistAvaila
     loginTherapist, getTherapistSpecialtyRegion, updateAppointmentStatus, getTherapistDetailsByIdAndStatus,
     getTherapistDetailsById} = require('../controllers/therapist_controllers');
 const {loginAdmin} = require('../controllers/admin_controllers');
+const {addCalendarAvailability} = require('../controllers/calendar_controllers');
 
 const router = Router();
 
@@ -34,7 +35,7 @@ router.post("/therapist-login", loginTherapist )
 
 router.get("/getTherapistSpecialtyRegion", getTherapistSpecialtyRegion);
 
-
+router.post("/addCalendarAvailability", addCalendarAvailability)
 
 
 module.exports = router;
