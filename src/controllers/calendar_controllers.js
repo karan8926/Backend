@@ -8,14 +8,14 @@ async function addCalendarAvailability(req, res) {
       return res.status(400).json({ error: "All fields are required." });
     }
 
-    const existingAvailability = await calendarAvailability.findOne({
+    const existingData =  await calendarAvailability.findOne({
         therapistsId: therapistId,
         startTime,
         endTime,
       });
 
      
-    if (existingAvailability) {
+    if (existingData) {
         return res.status(409).json({
           error: "The specified date and time availability is already added.",
         });
