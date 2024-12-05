@@ -142,32 +142,34 @@ async function getTherapistAvailability(req, res) {
 
     let therapistquery = {};
     let query = {};
-     
+
     // Filter by therapist collection
-    if (!region === '') therapistquery.region = region ;
-    if (!name === '') therapistquery.name = name;
-    if (!email === '') therapistquery.email = email;
-    if (!number === '') therapistquery.phone_number = number;
-    if (!specialty === '') therapistquery.specialty = specialty;
+    if (!region === '') therapistquery.region = region ; 
+    if (!name=== '') therapistquery.name = name;
+    if (!email=== '') therapistquery.email = email;
+    if (!number=== '') therapistquery.phone_number = number;
+    if (!specialty=== '') therapistquery.specialty = specialty;
 
     // Filter by therapistAvailability collection
-    if (!therapistId === '') query.therapistsId = therapistId;
-    if (!status === '') query.status = status;
+    if (!therapistId=== '') query.therapistsId = therapistId;
+    if (status) query.status = status;
 
     // Handle soonest date filter (12hr or 24hr)
     if (soonest === "12hr") {
       query.date = { $gte: new Date(Date.now() - 12 * 60 * 60 * 1000) };
     } else if (soonest === "24hr") {
       query.date = { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) };
-    } else if (!date === '') {
+    } else if (!date=== '') {
       query.date = new Date(date);
     }
+
     // Filter therapists
     const filteredTherapists = await Therapist.aggregate([
       { $match: therapistquery },
     ]);
 
     let availabilityData = [];
+
     for (let i = 0; i < filteredTherapists.length; i++) {
       query.therapistsId = filteredTherapists[i]._id;
       const data = await TherapistAvailability.aggregate([
@@ -199,7 +201,7 @@ async function getTherapistAvailability(req, res) {
     console.error("Error fetching availability:", error);
     return res.status(500).json({ error: "Error fetching availability" });
   }
-}
+} 
 
 async function loginTherapist(req, res) {
   try {
