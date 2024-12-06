@@ -144,14 +144,15 @@ async function getTherapistAvailability(req, res) {
     let query = {};
 
     // Filter by therapist collection
-    if (!region === '') therapistquery.region = region ; 
-    if (!name=== '') therapistquery.name = name;
-    if (!email=== '') therapistquery.email = email;
-    if (!number=== '') therapistquery.phone_number = number;
-    if (!specialty=== '') therapistquery.specialty = specialty;
+    if (region?.trim()) therapistquery.region = region;
+    if (name?.trim()) therapistquery.name = name;
+    if (email?.trim()) therapistquery.email = email;
+    if (number?.trim()) therapistquery.phone_number = number;
+    if (specialty?.trim()) therapistquery.specialty = specialty;
+
 
     // Filter by therapistAvailability collection
-    if (!therapistId=== '') query.therapistsId = therapistId;
+    if (therapistId?.trim()) query.therapistsId = therapistId;
     if (status) query.status = status;
 
     // Handle soonest date filter (12hr or 24hr)
@@ -159,7 +160,7 @@ async function getTherapistAvailability(req, res) {
       query.date = { $gte: new Date(Date.now() - 12 * 60 * 60 * 1000) };
     } else if (soonest === "24hr") {
       query.date = { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) };
-    } else if (!date=== '') {
+    } else if (date?.trim()) {
       query.date = new Date(date);
     }
 
@@ -168,10 +169,20 @@ async function getTherapistAvailability(req, res) {
       { $match: therapistquery },
     ]);
 
+    if (filteredTherapists.length === 0) {
+      return res.status(200).json({
+        message: "No therapists found for the given filters",
+        totalItems: 0,
+        totalPages: 0,
+        currentPage: pageData,
+        appointmentData: [],
+      });
+    }
+
     let availabilityData = [];
 
-    for (let i = 0; i < filteredTherapists.length; i++) {
-      query.therapistsId = filteredTherapists[i]._id;
+    for (const therapist of filteredTherapists) {
+      query.therapistsId = therapist._id;
       const data = await TherapistAvailability.aggregate([
         { $match: query },
         {
@@ -201,7 +212,7 @@ async function getTherapistAvailability(req, res) {
     console.error("Error fetching availability:", error);
     return res.status(500).json({ error: "Error fetching availability" });
   }
-} 
+}
 
 async function loginTherapist(req, res) {
   try {
