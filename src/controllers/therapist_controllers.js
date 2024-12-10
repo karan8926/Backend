@@ -131,10 +131,11 @@ async function getTherapistAvailability(req, res) {
       number,
       therapistId,
       specialty,
-      soonest,
       date,
       region,
       status,
+      currentMonth,
+      appointmentType
     } = req.query;
     const pageData = parseInt(req.query.pageNo) || 1;
     const limit = 12;
@@ -144,25 +145,32 @@ async function getTherapistAvailability(req, res) {
     let query = {};
 
     // Filter by therapist collection
-    if (region?.trim()) therapistquery.region = region;
-    if (name?.trim()) therapistquery.name = name;
-    if (email?.trim()) therapistquery.email = email;
-    if (number?.trim()) therapistquery.phone_number = number;
-    if (specialty?.trim()) therapistquery.specialty = specialty;
+    if (region?.trim()) therapistquery.region = region?.trim();
+    if (name?.trim()) therapistquery.name = name?.trim();
+    if (email?.trim()) therapistquery.email = email?.trim();
+    if (number?.trim()) therapistquery.phone_number = number?.trim();
+    if (specialty?.trim()) therapistquery.specialty = specialty?.trim();
 
 
     // Filter by therapistAvailability collection
-    if (therapistId?.trim()) query.therapistsId = therapistId;
+    if (therapistId?.trim()) query.therapistsId = therapistId?.trim();
     if (status) query.status = status;
+    if(appointmentType) query.appointmentType = appointmentType?.trim();
 
-    // Handle soonest date filter (12hr or 24hr)
-    if (soonest === "12hr") {
-      query.date = { $gte: new Date(Date.now() - 12 * 60 * 60 * 1000) };
-    } else if (soonest === "24hr") {
-      query.date = { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) };
-    } else if (date?.trim()) {
-      query.date = new Date(date);
+    if (date) {
+      const parsedDate = new Date(date);
+      if (!isNaN(parsedDate.getTime())) { 
+        query.date = parsedDate;
+      }
     }
+
+    if (currentMonth) {
+      const currentmonth = new Date();
+      const currentMonthInt = currentmonth.getMonth()+1;
+      query.$expr = { $eq: [ { $month: "$date" }, currentMonthInt ] };
+    }
+
+    console.log(query)
 
     // Filter therapists
     const filteredTherapists = await Therapist.aggregate([
