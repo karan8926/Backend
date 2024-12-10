@@ -165,7 +165,7 @@ async function getTherapistAvailability(req, res) {
     }
 
     if (currentMonth) {
-      const currentmonth = new Date();
+      const currentmonth = new Date(currentMonth);
       const currentMonthInt = currentmonth.getMonth()+1;
       query.$expr = { $eq: [ { $month: "$date" }, currentMonthInt ] };
     }
