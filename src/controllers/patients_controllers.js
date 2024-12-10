@@ -129,7 +129,7 @@ async function pantientSignIn(req, res) {
 }
 
 async function bookAppointment(req, res) {
-  const { therapistsId, date, time, patientEmail, patientNumber } = req.body;
+  const { therapistsId, date, time, patientEmail, patientNumber , name , email, phone } = req.body;
 
   if (!therapistsId || !date || !time || !patientEmail || !patientNumber) {
     return res.status(400).json({ error: "All fields are required." });
@@ -167,11 +167,14 @@ async function bookAppointment(req, res) {
 
       SaveStatus.status = "Pending";
       SaveStatus.patientsId = patientsDetails[0]._id;
+      SaveStatus.appointment.name = name;
+      SaveStatus.appointment.email = email;
+      SaveStatus.appointment.phone = phone;
 
       await SaveStatus.save();
 
       const PatientDetails = {
-        patientEmail: patientEmail,
+        patientEmail: email,
         date: date,
         time: time,
       };
@@ -180,9 +183,9 @@ async function bookAppointment(req, res) {
       const message = {
         date: date,
         time: time,
-        patientNumber: patientNumber,
+        patientNumber: phone,
       };
-      // await sendMobileMessage(message);
+      await sendMobileMessage(message);
 
       return res.status(200).json({
         message: "Appointment booked successfully. Confirmation email sent.",

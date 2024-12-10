@@ -62,6 +62,20 @@ const therapistAvailabilitySchema = new mongoose.Schema(
       type: String,
       required: false,
     },
+    appointment: {
+      name: {
+        type: String,
+        required: true,
+      },
+      email: {
+        type: String,
+        required: true,
+      },
+      phone: {
+        type: String,
+        required: true,
+      },
+    },
   },
   { timestamps: true }
 );
