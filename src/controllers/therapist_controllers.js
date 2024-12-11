@@ -202,9 +202,11 @@ async function getTherapistAvailability(req, res) {
           },
         },
       ]);
+
       availabilityData = [...availabilityData, ...data];
     }
-
+ 
+    availabilityData.sort((a, b) => new Date(b.date) - new Date(a.date));
     // Pagination logic
     const totalItems = availabilityData.length;
     const paginatedData = availabilityData.slice(offset, offset + limit);
