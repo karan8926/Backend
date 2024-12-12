@@ -1,5 +1,5 @@
 const {Router} = require('express');
-const { pantientSignUp , pantientSignIn , bookAppointment , getPatient, allAppointment, getPatientDetailsById} = require('../controllers/patients_controllers');
+const { pantientSignUp , pantientSignIn , bookAppointment , getPatient, allAppointment, getPatientDetailsById ,getUniqueAccessCode } = require('../controllers/patients_controllers');
 const {AddTherapist, getTherapist , AddTherapistAvailability, getTherapistAvailability, 
     loginTherapist, getTherapistSpecialtyRegion, updateAppointmentStatus, getTherapistDetailsByIdAndStatus,
     getTherapistDetailsById} = require('../controllers/therapist_controllers');
@@ -38,6 +38,6 @@ router.get("/getTherapistSpecialtyRegion", getTherapistSpecialtyRegion);
 router.post("/addCalendarAvailability", addCalendarAvailability);
 router.get("/getCalendarAvailabilityById", getCalendarAvailabilityById)
 
-
+router.get("/getUniqueAccessCode",getUniqueAccessCode )
 
 module.exports = router;

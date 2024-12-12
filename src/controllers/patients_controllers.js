@@ -17,12 +17,12 @@ require("dotenv").config();
 
 async function pantientSignUp(req, res) {
   try {
-    const { name, phone_number, email } = req.body;
+    const { name, phone_number, email , accessCode} = req.body;
 
-    if (!name || !phone_number || !email) {
+    if (!name || !phone_number || !email || !accessCode) {
       return res
         .status(400)
-        .json({ error: "Name, number, and email are required." });
+        .json({ error: "Name, number, email and accessCode are required." });
     }
 
     const phoneRegex = /^\d{10}$/;
@@ -36,12 +36,12 @@ async function pantientSignUp(req, res) {
       return res.status(400).json({ error: "Invalid email address." });
     }
 
-    const existingPatient = await Patient.findOne({ email });
-    if (existingPatient) {
-      return res.status(400).json({ error: "Email already registered." });
-    }
+    // const existingPatient = await Patient.findOne({ email });
+    // if (existingPatient) {
+    //   return res.status(400).json({ error: "Email already registered." });
+    // }
 
-    const accessCode = await generateAccessCode();
+    // const accessCode = await generateAccessCode();
 
     const patientResult = new Patient({
       name,
@@ -84,11 +84,26 @@ async function pantientSignUp(req, res) {
       number: patientResult.phone_number,
       email: patientResult.email,
       accessCode: patientResult.accessCode,
+      status: patientResult.status,
       type: patientResult.type,
     });
   } catch (error) {
     console.error("Error during patient signup:", error);
     res.status(500).json({ error: "Server error. Please try again later." });
+  }
+}
+
+async function getUniqueAccessCode(req, res) {
+  try {
+    const accessCode = await generateAccessCode();
+    return res.status(200).json({
+      message:"Successfully generated AccessCode",
+      accessToken: accessCode,
+    });
+  } catch (error) {
+    return res
+    .status(500)
+    .json({ error: "Server error. Please try again later." });
   }
 }
 
@@ -339,4 +354,5 @@ module.exports = {
   allAppointment,
   getPatient,
   getPatientDetailsById,
+  getUniqueAccessCode
 };

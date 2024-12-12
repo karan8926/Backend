@@ -13,12 +13,17 @@ const patientSchema = new mongoose.Schema({
    email:{
     type: String,
     required: true,
-    Unique: true
    },
    accessCode:{
     type: String,
     required: true,
     Unique: true
+   },
+   status:{
+     type: String,
+     required : true,
+     enum:[true , false],
+     default : true
    },
    type: {
       type: String,
