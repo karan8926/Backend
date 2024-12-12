@@ -115,7 +115,11 @@ async function pantientSignIn(req, res) {
       return res.status(400).json({ error: "Access code is required." });
 
     const existedPatient = await Patient.findOne({ accessCode });
-
+    if (existedPatient.status === "false") {
+      return res.status(404).json({
+        error: "Access Code Expire",
+      });
+    }
     if (!existedPatient)
       return res.status(400).json({ error: "Invalid access code." });
 
@@ -144,7 +148,16 @@ async function pantientSignIn(req, res) {
 }
 
 async function bookAppointment(req, res) {
-  const { therapistsId, date, time, patientEmail, patientNumber , name , email, phone } = req.body;
+  const {
+    therapistsId,
+    date,
+    time,
+    patientEmail,
+    patientNumber,
+    name,
+    email,
+    phone,
+  } = req.body;
 
   if (!therapistsId || !date || !time || !patientEmail || !patientNumber) {
     return res.status(400).json({ error: "All fields are required." });
@@ -179,13 +192,14 @@ async function bookAppointment(req, res) {
       const SaveStatus = await TherapistAvailability.findById(slotId);
 
       const patientsDetails = await Patient.find({ email: patientEmail });
-
       SaveStatus.status = "Pending";
       SaveStatus.patientsId = patientsDetails[0]._id;
       SaveStatus.appointment.name = name;
       SaveStatus.appointment.email = email;
       SaveStatus.appointment.phone = phone;
 
+      patientsDetails[0].status = false;
+      await patientsDetails[0].save();
       await SaveStatus.save();
 
       const PatientDetails = {
