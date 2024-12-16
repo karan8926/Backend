@@ -135,7 +135,7 @@ async function getTherapistAvailability(req, res) {
       region,
       status,
       currentMonth,
-      appointmentType
+      appointmentType,
     } = req.query;
     const pageData = parseInt(req.query.pageNo) || 1;
     const limit = 12;
@@ -151,26 +151,25 @@ async function getTherapistAvailability(req, res) {
     if (number?.trim()) therapistquery.phone_number = number?.trim();
     if (specialty?.trim()) therapistquery.specialty = specialty?.trim();
 
-
     // Filter by therapistAvailability collection
     if (therapistId?.trim()) query.therapistsId = therapistId?.trim();
     if (status) query.status = status;
-    if(appointmentType) query.appointmentType = appointmentType?.trim();
+    if (appointmentType) query.appointmentType = appointmentType?.trim();
 
     if (date) {
       const parsedDate = new Date(date);
-      if (!isNaN(parsedDate.getTime())) { 
+      if (!isNaN(parsedDate.getTime())) {
         query.date = parsedDate;
       }
     }
 
     if (currentMonth) {
       const currentmonth = new Date(currentMonth);
-      const currentMonthInt = currentmonth.getMonth()+1;
-      query.$expr = { $eq: [ { $month: "$date" }, currentMonthInt ] };
+      const currentMonthInt = currentmonth.getMonth() + 1;
+      query.$expr = { $eq: [{ $month: "$date" }, currentMonthInt] };
     }
 
-    console.log(query)
+    console.log(query);
 
     // Filter therapists
     const filteredTherapists = await Therapist.aggregate([
@@ -205,8 +204,8 @@ async function getTherapistAvailability(req, res) {
 
       availabilityData = [...availabilityData, ...data];
     }
- 
-    availabilityData.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    availabilityData.sort((a, b) => new Date(a.date) - new Date(b.date));
     // Pagination logic
     const totalItems = availabilityData.length;
     const paginatedData = availabilityData.slice(offset, offset + limit);
@@ -312,15 +311,16 @@ async function getTherapistDetailsByIdAndStatus(req, res) {
       },
       {
         $lookup: {
-          from: "patients", 
+          from: "patients",
           localField: "patientsId",
-          foreignField: "_id", 
+          foreignField: "_id",
           as: "patientDetails",
         },
       },
-    ]).skip(offset)
-      .limit(limit); 
-    
+    ])
+      .skip(offset)
+      .limit(limit);
+
     if (!result.length) {
       return res.status(404).json({ message: "Data is not found." });
     }
@@ -371,12 +371,12 @@ async function getTherapistDetailsById(req, res) {
       },
       {
         $lookup: {
-          from: "patients", 
+          from: "patients",
           localField: "patientsId",
-          foreignField: "_id", 
+          foreignField: "_id",
           as: "patientDetails",
         },
-      }
+      },
     ])
       .skip(offset)
       .limit(limit);
