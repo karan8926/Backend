@@ -1,36 +1,39 @@
 const mongoose = require("mongoose");
-const patient = require("./patients_models")
+const patient = require("./patients_models");
 
-const therapistSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
+const therapistSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+    },
+    email: {
+      type: String,
+      required: true,
+    },
+    number: {
+      type: String,
+      required: true,
+    },
+    region: {
+      type: String,
+      required: true,
+    },
+    specialty: {
+      type: String,
+      required: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    type: {
+      type: String,
+      default: "Therapist",
+    },
   },
-  email: {
-    type: String,
-    required: true,
-  },
-  number: {
-    type: String,
-    required: true,
-  },
-  region: {
-    type: String,
-    required: true,
-  },
-  specialty: {
-    type: String,
-    required: true,
-  },
-  password: {
-    type: String,
-    required: true,
-  },
-  type: {
-    type: String,
-    default: "Therapist",
-  },
-},{ timestamps: true });
+  { timestamps: true }
+);
 
 const Therapist = mongoose.model("Therapist", therapistSchema);
 
@@ -65,15 +68,12 @@ const therapistAvailabilitySchema = new mongoose.Schema(
     appointment: {
       name: {
         type: String,
-        required: true,
       },
       email: {
         type: String,
-        required: true,
       },
       phone: {
         type: String,
-        required: true,
       },
     },
   },
