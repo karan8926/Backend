@@ -1,5 +1,64 @@
 const calendarAvailability = require("../models/calendar_models");
+const moment = require("moment");
+const { TherapistAvailability } = require("../models/therapist_models");
 
+function TimeExtraction(date) {
+  console.log(typeof date, date, "type");
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+async function createAppointmentOnTheBasisOfAvailability(
+  startTime,
+  endTime,
+  therapistId
+) {
+  const start = moment(startTime);
+  const end = moment(endTime);
+
+  const totalDuration = end.diff(start, "minutes");
+  const num45MinAppointments = Math.floor(totalDuration / 2 / 45);
+  const num30MinAppointments = Math.floor(totalDuration / 2 / 30);
+
+  const appointments = [];
+  let currentTime = start.clone();
+
+  for (
+    let i = 0;
+    i < Math.max(num45MinAppointments, num30MinAppointments);
+    i++
+  ) {
+    if (i < num45MinAppointments) {
+      const appointmentStart = currentTime.clone();
+      const appointmentEnd = appointmentStart.clone().add(45, "minutes");
+      appointments.push({
+        therapistsId: therapistId,
+        date: appointmentStart.toISOString(),
+        time: TimeExtraction(new Date(appointmentStart)),
+        status: "none",
+        appointmentType: "Consultation(45min)",
+      });
+
+      currentTime = appointmentEnd;
+    }
+
+    if (i < num30MinAppointments) {
+      const appointmentStart = currentTime.clone();
+      const appointmentEnd = appointmentStart.clone().add(30, "minutes");
+      appointments.push({
+        therapistsId: therapistId,
+        date: appointmentStart.toISOString(),
+        time: TimeExtraction(new Date(appointmentStart)),
+        status: "none",
+        appointmentType: "Follow-up(30min)",
+      });
+      currentTime = appointmentEnd;
+    }
+  }
+
+  const newAvailabilites = await TherapistAvailability.insertMany(appointments);
+  return;
+}
 async function addCalendarAvailability(req, res) {
   try {
     const { therapistId, availability, startTime, endTime } = req.body;
@@ -8,19 +67,26 @@ async function addCalendarAvailability(req, res) {
       return res.status(400).json({ error: "All fields are required." });
     }
 
-    const existingData =  await calendarAvailability.findOne({
-        therapistsId: therapistId,
+    const existingData = await calendarAvailability.findOne({
+      therapistsId: therapistId,
+      startTime,
+      endTime,
+    });
+
+    if (existingData) {
+      return res.status(409).json({
+        error: "The specified date and time availability is already added.",
+      });
+    }
+
+    if (availability === "Available") {
+      const data = await createAppointmentOnTheBasisOfAvailability(
         startTime,
         endTime,
-      });
-
-     
-    if (existingData) {
-        return res.status(409).json({
-          error: "The specified date and time availability is already added.",
-        });
-    } 
-
+        therapistId,
+        availability
+      );
+    }
     const newAvailability = new calendarAvailability({
       therapistsId: therapistId,
       availability,
@@ -55,11 +121,9 @@ async function getCalendarAvailabilityById(req, res) {
     });
 
     if (availabilityData.length === 0) {
-      return res
-        .status(404)
-        .json({
-          error: "No availability data found for the this therapistId.",
-        });
+      return res.status(404).json({
+        error: "No availability data found for the this therapistId.",
+      });
     }
 
     return res.status(200).json({

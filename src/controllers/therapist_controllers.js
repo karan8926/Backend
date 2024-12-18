@@ -86,10 +86,11 @@ async function AddTherapistAvailability(req, res) {
       return res.status(404).json({ error: "Therapist not found." });
     }
 
+    const dateTimeString = `${date}T${time}:00.000+00:00`;
     // Check if the therapist already has an availability for the given date and time
     const existingAvailability = await TherapistAvailability.findOne({
       therapistsId: therapistData._id,
-      date,
+      date: dateTimeString,
       time,
     });
 

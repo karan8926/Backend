@@ -17,7 +17,7 @@ require("dotenv").config();
 
 async function pantientSignUp(req, res) {
   try {
-    const { name, phone_number, email , accessCode} = req.body;
+    const { name, phone_number, email, accessCode } = req.body;
 
     if (!name || !phone_number || !email || !accessCode) {
       return res
@@ -97,13 +97,13 @@ async function getUniqueAccessCode(req, res) {
   try {
     const accessCode = await generateAccessCode();
     return res.status(200).json({
-      message:"Successfully generated AccessCode",
+      message: "Successfully generated AccessCode",
       accessToken: accessCode,
     });
   } catch (error) {
     return res
-    .status(500)
-    .json({ error: "Server error. Please try again later." });
+      .status(500)
+      .json({ error: "Server error. Please try again later." });
   }
 }
 
@@ -228,6 +228,7 @@ async function bookAppointment(req, res) {
 }
 
 async function allAppointment(req, res) {
+  await removeExpireAppointments();
   const pageNo = req.query.pageNo || 1;
   const limit = 12;
   const offset = (pageNo - 1) * limit;
@@ -361,6 +362,16 @@ async function getPatientDetailsById(req, res) {
   }
 }
 
+// remove expire appointments
+async function removeExpireAppointments() {
+  try {
+    const today = moment(new Date());
+    await TherapistAvailability.deleteMany({ date: { lt: today } });
+    return;
+  } catch (error) {
+    return error;
+  }
+}
 module.exports = {
   pantientSignUp,
   pantientSignIn,
@@ -368,5 +379,5 @@ module.exports = {
   allAppointment,
   getPatient,
   getPatientDetailsById,
-  getUniqueAccessCode
+  getUniqueAccessCode,
 };
