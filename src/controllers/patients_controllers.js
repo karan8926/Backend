@@ -214,7 +214,7 @@ async function bookAppointment(req, res) {
         time: time,
         patientNumber: phone,
       };
-      await sendMobileMessage(message);
+      // await sendMobileMessage(message);
 
       return res.status(200).json({
         message: "Appointment booked successfully. Confirmation email sent.",
