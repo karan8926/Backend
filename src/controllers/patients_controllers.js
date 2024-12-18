@@ -17,20 +17,21 @@ require("dotenv").config();
 
 async function pantientSignUp(req, res) {
   try {
-    const { name, phone_number, email, accessCode } = req.body;
+    // const { name, phone_number, email, accessCode } = req.body;
+    const { email, accessCode } = req.body;
 
-    if (!name || !phone_number || !email || !accessCode) {
+    if (!email || !accessCode) {
       return res
         .status(400)
         .json({ error: "Name, number, email and accessCode are required." });
     }
 
-    const phoneRegex = /^\d{10}$/;
-    if (!phoneRegex.test(phone_number)) {
-      return res
-        .status(400)
-        .json({ error: "Phone number must be exactly 10 digits." });
-    }
+    // const phoneRegex = /^\d{10}$/;
+    // if (!phoneRegex.test(phone_number)) {
+    //   return res
+    //     .status(400)
+    //     .json({ error: "Phone number must be exactly 10 digits." });
+    // }
 
     if (!emailValidator.validate(email)) {
       return res.status(400).json({ error: "Invalid email address." });
@@ -44,8 +45,8 @@ async function pantientSignUp(req, res) {
     // const accessCode = await generateAccessCode();
 
     const patientResult = new Patient({
-      name,
-      phone_number,
+      // name,
+      // phone_number,
       email,
       accessCode,
     });
@@ -80,8 +81,8 @@ async function pantientSignUp(req, res) {
     }
 
     res.status(201).json({
-      name: patientResult.name,
-      number: patientResult.phone_number,
+      // name: patientResult.name,
+      // number: patientResult.phone_number,
       email: patientResult.email,
       accessCode: patientResult.accessCode,
       status: patientResult.status,
@@ -153,13 +154,13 @@ async function bookAppointment(req, res) {
     date,
     time,
     patientEmail,
-    patientNumber,
+    // patientNumber,
     name,
     email,
     phone,
   } = req.body;
 
-  if (!therapistsId || !date || !time || !patientEmail || !patientNumber) {
+  if (!therapistsId || !date || !time || !patientEmail) {
     return res.status(400).json({ error: "All fields are required." });
   }
 
@@ -190,17 +191,17 @@ async function bookAppointment(req, res) {
     } else {
       const slotId = slot[0]._id;
       const SaveStatus = await TherapistAvailability.findById(slotId);
-
       const patientsDetails = await Patient.find({ email: patientEmail });
       SaveStatus.status = "Pending";
       SaveStatus.patientsId = patientsDetails[0]._id;
       SaveStatus.appointment.name = name;
       SaveStatus.appointment.email = email;
       SaveStatus.appointment.phone = phone;
-
+      patientsDetails[0].phone_number = phone;
+      patientsDetails[0].name = name;
       patientsDetails[0].status = false;
-      await patientsDetails[0].save();
-      await SaveStatus.save();
+
+      await Promise.all([patientsDetails[0].save(), SaveStatus.save()]);
 
       const PatientDetails = {
         patientEmail: email,
@@ -212,7 +213,7 @@ async function bookAppointment(req, res) {
       const message = {
         date: date,
         time: time,
-        patientNumber: phone,
+        // patientNumber: phone,
       };
       // await sendMobileMessage(message);
 

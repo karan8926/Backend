@@ -33,7 +33,7 @@ async function createAppointmentOnTheBasisOfAvailability(
       const appointmentEnd = appointmentStart.clone().add(45, "minutes");
       appointments.push({
         therapistsId: therapistId,
-        date: appointmentStart.toISOString(),
+        date: appointmentStart.toISOString().split("T")[0],
         time: TimeExtraction(new Date(appointmentStart)),
         status: "none",
         appointmentType: "Consultation(45min)",
@@ -47,7 +47,7 @@ async function createAppointmentOnTheBasisOfAvailability(
       const appointmentEnd = appointmentStart.clone().add(30, "minutes");
       appointments.push({
         therapistsId: therapistId,
-        date: appointmentStart.toISOString(),
+        date: appointmentStart.toISOString().split("T")[0],
         time: TimeExtraction(new Date(appointmentStart)),
         status: "none",
         appointmentType: "Follow-up(30min)",
