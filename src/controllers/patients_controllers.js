@@ -228,8 +228,8 @@ async function bookAppointment(req, res) {
   }
 }
 
+
 async function allAppointment(req, res) {
-  await removeExpireAppointments();
   const pageNo = req.query.pageNo || 1;
   const limit = 12;
   const offset = (pageNo - 1) * limit;
@@ -363,16 +363,6 @@ async function getPatientDetailsById(req, res) {
   }
 }
 
-// remove expire appointments
-async function removeExpireAppointments() {
-  try {
-    const today = moment(new Date());
-    await TherapistAvailability.deleteMany({ date: { lt: today } });
-    return;
-  } catch (error) {
-    return error;
-  }
-}
 module.exports = {
   pantientSignUp,
   pantientSignIn,

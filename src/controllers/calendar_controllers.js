@@ -111,7 +111,6 @@ async function addCalendarAvailability(req, res) {
 async function getCalendarAvailabilityById(req, res) {
   try {
     const { therapistId } = req.query;
-
     if (!therapistId) {
       return res.status(400).json({ error: "therapistId are required." });
     }

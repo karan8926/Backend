@@ -4,6 +4,7 @@ const {
 } = require("../models/therapist_models");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
+const { removeExpireAppointments } = require("../utils/removeExpireData");
 
 //admin added the therapist details
 async function AddTherapist(req, res) {
@@ -138,6 +139,8 @@ async function getTherapistAvailability(req, res) {
       currentMonth,
       appointmentType,
     } = req.query;
+
+    await removeExpireAppointments();
     const pageData = parseInt(req.query.pageNo) || 1;
     const limit = 12;
     const offset = (pageData - 1) * limit;
