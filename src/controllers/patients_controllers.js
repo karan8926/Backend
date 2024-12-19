@@ -58,13 +58,13 @@ async function pantientSignUp(req, res) {
       secure: true,
       port: 465,
       auth: {
-        user: "info66441@gmail.com",
-        pass: "hgqa fxvm ddiz fido",
+        user: "skylinea1999@gmail.com",
+        pass: "bsjk htag iocy atnz",
       },
     });
 
     const mailOptions = {
-      from: process.env.FROM_GMAIL,
+      from: "skylinea1999@gmail.com",
       to: patientResult.email,
       subject: "Registered Successfully",
       html: `<p>Your Access Code is: <strong>${patientResult.accessCode}</strong></p>
@@ -72,7 +72,7 @@ async function pantientSignUp(req, res) {
     };
 
     try {
-      await transporter.sendMail(mailOptions);
+      const data = await transporter.sendMail(mailOptions);
     } catch (emailError) {
       console.error("Error sending email:", emailError);
       return res
@@ -227,7 +227,6 @@ async function bookAppointment(req, res) {
     return res.status(500).json({ error: "Error booking appointment" });
   }
 }
-
 
 async function allAppointment(req, res) {
   const pageNo = req.query.pageNo || 1;
