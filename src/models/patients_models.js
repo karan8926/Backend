@@ -18,7 +18,7 @@ const patientSchema = new mongoose.Schema(
     accessCode: {
       type: String,
       // required: true,
-      Unique: true,
+      unique: true,
     },
     status: {
       type: String,

@@ -158,6 +158,7 @@ async function bookAppointment(req, res) {
     name,
     email,
     phone,
+    accessCode, //it is unique so we can find patient data
   } = req.body;
 
   if (!therapistsId || !date || !time || !patientEmail) {
@@ -191,7 +192,7 @@ async function bookAppointment(req, res) {
     } else {
       const slotId = slot[0]._id;
       const SaveStatus = await TherapistAvailability.findById(slotId);
-      const patientsDetails = await Patient.find({ email: patientEmail });
+      const patientsDetails = await Patient.find({ accessCode: accessCode });
       SaveStatus.status = "Pending";
       SaveStatus.patientsId = patientsDetails[0]._id;
       SaveStatus.appointment.name = name;

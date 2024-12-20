@@ -196,13 +196,13 @@ async function getTherapistAvailability(req, res) {
       {
         $lookup: {
           from: "therapists",
-          localField: "therapistsId", 
+          localField: "therapistsId",
           foreignField: "_id",
-          as: "therapistDetails", 
+          as: "therapistDetails",
         },
       },
       {
-        $match: query, 
+        $match: query,
       },
     ]);
 
