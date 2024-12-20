@@ -173,12 +173,7 @@ async function getTherapistAvailability(req, res) {
       query.$expr = { $eq: [{ $month: "$date" }, currentMonthInt] };
     }
 
-    console.log(query);
-
-    // Filter therapists
-    const filteredTherapists = await Therapist.aggregate([
-      { $match: therapistquery },
-    ]);
+    const filteredTherapists = await Therapist.find(therapistquery);
 
     if (filteredTherapists.length === 0) {
       return res.status(200).json({
@@ -192,22 +187,26 @@ async function getTherapistAvailability(req, res) {
 
     let availabilityData = [];
 
-    for (const therapist of filteredTherapists) {
-      query.therapistsId = therapist._id;
-      const data = await TherapistAvailability.aggregate([
-        { $match: query },
-        {
-          $lookup: {
-            from: "therapists",
-            localField: "therapistsId",
-            foreignField: "_id",
-            as: "therapistDetails",
-          },
+    const data = await TherapistAvailability.aggregate([
+      {
+        $match: {
+          therapistsId: { $in: filteredTherapists.map((t) => t._id) },
         },
-      ]);
+      },
+      {
+        $lookup: {
+          from: "therapists",
+          localField: "therapistsId", 
+          foreignField: "_id",
+          as: "therapistDetails", 
+        },
+      },
+      {
+        $match: query, 
+      },
+    ]);
 
-      availabilityData = [...availabilityData, ...data];
-    }
+    availabilityData = [...availabilityData, ...data];
 
     availabilityData.sort((a, b) => new Date(a.date) - new Date(b.date));
     // Pagination logic
