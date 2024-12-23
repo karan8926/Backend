@@ -325,7 +325,7 @@ async function getTherapistDetailsByIdAndStatus(req, res) {
       .limit(limit);
 
     if (!result.length) {
-      return res.status(404).json({ message: "Data is not found." });
+      return res.status(204).json({ message: "Data is not found." });
     }
 
     return res.status(200).json({
@@ -385,7 +385,7 @@ async function getTherapistDetailsById(req, res) {
       .limit(limit);
 
     if (!result.length) {
-      return res.status(404).json({ message: "Data is not found." });
+      return res.status(204).json({ message: "Data is not found." });
     }
 
     return res.status(200).json({
