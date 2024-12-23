@@ -352,7 +352,7 @@ async function getTherapistDetailsById(req, res) {
       return res.status(400).json({ error: "therapistId is required." });
     }
 
-    let filter = {};
+    let filter = { status: { $ne: "none" } };
 
     if (mongoose.Types.ObjectId.isValid(therapistId)) {
       filter.therapistsId = new mongoose.Types.ObjectId(therapistId);
@@ -385,7 +385,7 @@ async function getTherapistDetailsById(req, res) {
       .limit(limit);
 
     if (!result.length) {
-      return res.status(204).json({ message: "data is not found." });
+      return res.status(404).json({ message: "Data is not found." });
     }
 
     return res.status(200).json({
