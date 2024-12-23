@@ -47,7 +47,7 @@ async function AddTherapist(req, res) {
 //get therapist
 async function getTherapist(req, res) {
   const { pageNo } = req.query || 1;
-  const limit = 12;
+  const limit = 10;
   const offset = (pageNo - 1) * limit;
   try {
     const availability = await Therapist.find()
@@ -142,7 +142,7 @@ async function getTherapistAvailability(req, res) {
 
     await removeExpireAppointments();
     const pageData = parseInt(req.query.pageNo) || 1;
-    const limit = 12;
+    const limit = 10;
     const offset = (pageData - 1) * limit;
 
     let therapistquery = {};
@@ -285,7 +285,7 @@ async function getTherapistDetailsByIdAndStatus(req, res) {
   try {
     const { therapistId } = req.query;
     const pageNo = parseInt(req.query.pageNo) || 1;
-    const limit = 12;
+    const limit = 10;
     const offset = (pageNo - 1) * limit;
 
     if (!therapistId) {
@@ -345,7 +345,7 @@ async function getTherapistDetailsById(req, res) {
   try {
     const { therapistId } = req.query;
     const pageNo = parseInt(req.query.pageNo) || 1;
-    const limit = 12;
+    const limit = 10;
     const offset = (pageNo - 1) * limit;
 
     if (!therapistId) {

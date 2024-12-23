@@ -231,7 +231,7 @@ async function bookAppointment(req, res) {
 
 async function allAppointment(req, res) {
   const pageNo = req.query.pageNo || 1;
-  const limit = 12;
+  const limit = 10;
   const offset = (pageNo - 1) * limit;
 
   console.log(pageNo, limit, offset);
@@ -279,7 +279,7 @@ async function allAppointment(req, res) {
 
 async function getPatient(req, res) {
   const { pageNo } = req.query || 1;
-  const limit = 12;
+  const limit = 10;
   const offset = (pageNo - 1) * limit;
   try {
     const patients = await Patient.find()
@@ -307,7 +307,7 @@ async function getPatientDetailsById(req, res) {
   try {
     const { patientId } = req.query;
     const pageNo = parseInt(req.query.pageNo) || 1;
-    const limit = parseInt(req.query.pageSize) || 12;
+    const limit = parseInt(req.query.pageSize) || 10;
     const offset = (pageNo - 1) * limit;
 
     if (!patientId) {
