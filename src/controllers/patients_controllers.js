@@ -18,7 +18,7 @@ require("dotenv").config();
 async function pantientSignUp(req, res) {
   try {
     // const { name, phone_number, email, accessCode } = req.body;
-    const { email, accessCode } = req.body;
+    const { email, name, phone_number, accessCode } = req.body;
 
     if (!email || !accessCode) {
       return res
@@ -51,6 +51,12 @@ async function pantientSignUp(req, res) {
       accessCode,
     });
 
+    if (name) {
+      patientResult.name = name;
+    }
+    if (phone_number) {
+      patientResult.phone_number = phone_number;
+    }
     await patientResult.save();
 
     const transporter = nodemailer.createTransport({
