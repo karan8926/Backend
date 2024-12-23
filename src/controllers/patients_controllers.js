@@ -58,8 +58,8 @@ async function pantientSignUp(req, res) {
       secure: true,
       port: 465,
       auth: {
-        user: "skylinea1999@gmail.com",
-        pass: "bsjk htag iocy atnz",
+        user: "info66441@gmail.com",
+        pass: "hgqa fxvm ddiz fido",
       },
     });
 
