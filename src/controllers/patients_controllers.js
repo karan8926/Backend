@@ -237,7 +237,7 @@ async function bookAppointment(req, res) {
 
 async function allAppointment(req, res) {
   const pageNo = req.query.pageNo || 1;
-  const limit = 10;
+  const limit = 8;
   const offset = (pageNo - 1) * limit;
 
   console.log(pageNo, limit, offset);
