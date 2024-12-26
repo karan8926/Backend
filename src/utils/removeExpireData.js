@@ -8,6 +8,7 @@ async function removeExpireAppointments() {
 
     const data = await TherapistAvailability.deleteMany({
       date: { $lt: today },
+      $or: [{ appointment: null }, { appointment: { $exists: false } }],
     });
     console.log(data, "data");
     return;
