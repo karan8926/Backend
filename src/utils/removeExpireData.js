@@ -20,13 +20,11 @@ async function removeExpireAppointments() {
 
 async function removeExpireCalendarAvailability() {
   try {
-    const currentDate = new Date();
-    // const today = new Date(currentDate.setHours(0, 0, 0, 0));
-
+    // Delete expired calendar availability entries in the database
     const data = await calendarAvailability.deleteMany({
-      startTime: { $lt: currentDate },
+      endTime: { $lt: new Date().toISOString() },
     });
-    console.log(data, "data");
+    console.log(data);
     return;
   } catch (error) {
     console.log(error, "erro");

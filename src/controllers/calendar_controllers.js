@@ -1,6 +1,9 @@
 const calendarAvailability = require("../models/calendar_models");
 const moment = require("moment");
 const { TherapistAvailability } = require("../models/therapist_models");
+const {
+  removeExpireCalendarAvailability,
+} = require("../utils/removeExpireData");
 
 function TimeExtraction(date) {
   console.log(typeof date, date, "type");
@@ -115,6 +118,7 @@ async function getCalendarAvailabilityById(req, res) {
       return res.status(400).json({ error: "therapistId are required." });
     }
 
+    await removeExpireCalendarAvailability();
     const availabilityData = await calendarAvailability.find({
       therapistsId: therapistId,
     });
