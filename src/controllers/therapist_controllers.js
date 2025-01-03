@@ -5,7 +5,8 @@ const {
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const { removeExpireAppointments } = require("../utils/removeExpireData");
-
+const moment = require("moment");
+const sendGmailService = require("../utils/generateGmailService");
 //admin added the therapist details
 async function AddTherapist(req, res) {
   const { name, email, number, specialty, region, password } = req.body;
@@ -46,16 +47,19 @@ async function AddTherapist(req, res) {
 }
 //get therapist
 async function getTherapist(req, res) {
-  const { pageNo } = req.query || 1;
+  const { pageNo, searchTherapist } = req.query || 1;
   const limit = 6;
   const offset = (pageNo - 1) * limit;
+  const filter = searchTherapist
+    ? { name: { $regex: searchTherapist, $options: "i" } }
+    : {};
   try {
-    const availability = await Therapist.find()
+    const availability = await Therapist.find(filter)
       .limit(limit)
       .skip(offset)
       .sort({ createdAt: -1 });
 
-    const totalAvailability = await Therapist.countDocuments();
+    const totalAvailability = await Therapist.countDocuments(filter);
     return res.status(200).json({
       message: "fetched successfully",
       availability,
@@ -162,8 +166,10 @@ async function getTherapistAvailability(req, res) {
 
     if (date) {
       const parsedDate = new Date(date);
+      const nextDay = new Date(parsedDate);
+      nextDay.setDate(parsedDate.getDate() + 1); // Increment the day by 1
       if (!isNaN(parsedDate.getTime())) {
-        query.date = parsedDate;
+        query.date = { $gte: parsedDate, $lt: nextDay };
       }
     }
 
@@ -403,8 +409,8 @@ async function getTherapistDetailsById(req, res) {
 
 const updateAppointmentStatus = async (req, res) => {
   try {
-    const { id, status } = req.body;
-
+    const { id, status, emailId } = req.body;
+    // email to the patient when therapist update the status of appointment
     const existingResult = await TherapistAvailability.findOne({ _id: id });
 
     if (!existingResult) {
@@ -416,6 +422,11 @@ const updateAppointmentStatus = async (req, res) => {
       { status },
       { new: true }
     );
+    const PatientDetails = {
+      patientEmail: emailId,
+      status: status,
+    };
+    await sendGmailService(PatientDetails);
 
     res.status(200).json({
       message: "Appointment status updated successfully",

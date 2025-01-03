@@ -284,11 +284,14 @@ async function allAppointment(req, res) {
 }
 
 async function getPatient(req, res) {
-  const { pageNo } = req.query || 1;
+  const { pageNo, searchPatient } = req.query || 1;
   const limit = 10;
   const offset = (pageNo - 1) * limit;
+  const filter = searchPatient
+    ? { name: { $regex: searchPatient, $options: "i" } }
+    : {};
   try {
-    const patients = await Patient.find()
+    const patients = await Patient.find(filter)
       .limit(limit)
       .skip(offset)
       .sort({ createdAt: -1 });
@@ -296,7 +299,7 @@ async function getPatient(req, res) {
     if (patients.length === 0) {
       return res.status(404).json({ message: "No patients found" });
     }
-    const totalPatients = await Patient.countDocuments();
+    const totalPatients = await Patient.countDocuments(filter);
     res.status(200).json({
       message: "Patients retrieved successfully",
       patients,
