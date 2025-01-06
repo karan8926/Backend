@@ -239,8 +239,16 @@ async function allAppointment(req, res) {
   const pageNo = req.query.pageNo || 1;
   const limit = 8;
   const offset = (pageNo - 1) * limit;
-
-  console.log(pageNo, limit, offset);
+  const { searchType, searchQuery, region, speciality } = req.query;
+  // console.log(searchType, searchQuery, region, speciality, "abcd");
+  const filters = {
+    appointmentName: searchType === "patient" ? searchQuery : " ", 
+    therapistName: searchType === "therapist" ? searchQuery : " ", 
+    therapistRegion: region, 
+    therapistSpeciality: speciality,
+  };
+  // add filter and search in it
+  // console.log(pageNo, limit, offset);
   try {
     const AppointmentData = await TherapistAvailability.aggregate([
       {
@@ -259,10 +267,34 @@ async function allAppointment(req, res) {
           as: "patientDetails",
         },
       },
-    ])
-      .skip(offset)
-      .limit(limit);
-    console.log(AppointmentData.length, "length");
+      {
+        $match: {
+          ...(filters.appointmentName !== " "
+            ? { "appointment.name": filters.appointmentName }
+            : {}),
+          ...(filters.therapistName !== " "
+            ? { "therapistDetails.name": filters.therapistName }
+            : {}),
+          ...(filters.therapistRegion !== "all"
+            ? { "therapistDetails.region": filters.therapistRegion }
+            : {}),
+          ...(filters.therapistSpeciality !== "all"
+            ? { "therapistDetails.specialty": filters.therapistSpeciality }
+            : {}),
+          // appointment: { $exists: true, $not: { $size: 0 } }, // Ensures patientDetails exists and is not empty
+          // therapistDetails: { $exists: true, $not: { $size: 0 } }, // Ensures therapistDetails exists and is not empty
+        },
+      },
+      {
+        $skip: offset,
+      },
+      {
+        $limit: limit,
+      },
+    ]);
+    // .skip(offset)
+    // .limit(limit);
+    // console.log(AppointmentData, "length");
 
     if (AppointmentData.length === 0) {
       return res.status(404).json({ message: "No Appointment found" });
