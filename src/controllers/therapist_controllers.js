@@ -143,7 +143,6 @@ async function getTherapistAvailability(req, res) {
       currentMonth,
       appointmentType,
     } = req.query;
-
     await removeExpireAppointments();
     const pageData = parseInt(req.query.pageNo) || 1;
     const limit = 10;
@@ -165,11 +164,23 @@ async function getTherapistAvailability(req, res) {
     if (appointmentType) query.appointmentType = appointmentType?.trim();
 
     if (date) {
+      // Parse the date in UTC
       const parsedDate = new Date(date);
-      const nextDay = new Date(parsedDate);
-      nextDay.setDate(parsedDate.getDate() + 1); // Increment the day by 1
-      if (!isNaN(parsedDate.getTime())) {
-        query.date = { $gte: parsedDate, $lt: nextDay };
+      const utcDate = new Date(
+        Date.UTC(
+          parsedDate.getUTCFullYear(),
+          parsedDate.getUTCMonth(),
+          parsedDate.getUTCDate()
+        )
+      );
+
+      // Get the "next day" in UTC by setting the date to 1 day ahead
+      const nextDay = new Date(utcDate);
+      nextDay.setUTCDate(utcDate.getUTCDate() + 1); // Increment the day by 1
+
+      // Apply the query filter with the UTC-based dates
+      if (!isNaN(utcDate.getTime())) {
+        query.date = { $gte: utcDate, $lt: nextDay };
       }
     }
 
@@ -272,11 +283,12 @@ async function getTherapistSpecialtyRegion(req, res) {
   try {
     const therapistSpecialty = await Therapist.distinct("specialty");
     const therapistRegion = await Therapist.distinct("region");
-
+    const therapistNames = await Therapist.find({}).select("name -_id");
     res.status(200).json({
       success: true,
       specialty: therapistSpecialty,
       region: therapistRegion,
+      therapistName: therapistNames,
     });
   } catch (error) {
     console.error("Error fetching therapist specialty:", error);
@@ -358,7 +370,7 @@ async function getTherapistDetailsById(req, res) {
       return res.status(400).json({ error: "therapistId is required." });
     }
 
-    let filter = { status: { $ne: "none" } };
+    let filter = { status: { $ne: "" } };
 
     if (mongoose.Types.ObjectId.isValid(therapistId)) {
       filter.therapistsId = new mongoose.Types.ObjectId(therapistId);
