@@ -146,7 +146,7 @@ async function getTherapistAvailability(req, res) {
       appointmentType,
     } = req.query;
 
-    // console.log(date, "Date val");
+    // console.log(req.query, "Date val");
     await removeExpireAppointments();
     const pageData = parseInt(req.query.pageNo) || 1;
     const limit = 10;
@@ -188,7 +188,7 @@ async function getTherapistAvailability(req, res) {
       }
     }
 
-    if (currentMonth) {
+    if (currentMonth !== "null") {
       const currentmonth = new Date(currentMonth);
       const currentMonthInt = currentmonth.getMonth() + 1;
       query.$expr = { $eq: [{ $month: "$date" }, currentMonthInt] };
