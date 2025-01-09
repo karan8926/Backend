@@ -91,11 +91,14 @@ async function AddTherapistAvailability(req, res) {
       return res.status(404).json({ error: "Therapist not found." });
     }
 
-    const dateTimeString = `${date}T${time}:00.000+00:00`;
+    // console.log(new Date(date), "date");
+    // const dateTimeString = `${date}T${time}:00.000+00:00`;
+    // console.log(dateTimeString, "dateString");
     // Check if the therapist already has an availability for the given date and time
     const existingAvailability = await TherapistAvailability.findOne({
       therapistsId: therapistData._id,
-      date: dateTimeString,
+      // date: dateTimeString,
+      date: new Date(date),
       time,
     });
 
@@ -104,7 +107,6 @@ async function AddTherapistAvailability(req, res) {
         error: "This time slot is already added for the therapist.",
       });
     }
-
     // Create a new availability entry
     const newAvailability = new TherapistAvailability({
       therapistsId: therapistData._id,
@@ -143,11 +145,12 @@ async function getTherapistAvailability(req, res) {
       currentMonth,
       appointmentType,
     } = req.query;
+
+    // console.log(date, "Date val");
     await removeExpireAppointments();
     const pageData = parseInt(req.query.pageNo) || 1;
     const limit = 10;
     const offset = (pageData - 1) * limit;
-
     let therapistquery = {};
     let query = {};
 
@@ -163,7 +166,7 @@ async function getTherapistAvailability(req, res) {
     if (status) query.status = status;
     if (appointmentType) query.appointmentType = appointmentType?.trim();
 
-    if (date) {
+    if (date !== " ") {
       // Parse the date in UTC
       const parsedDate = new Date(date);
       const utcDate = new Date(
@@ -174,6 +177,7 @@ async function getTherapistAvailability(req, res) {
         )
       );
 
+      // console.log(utcDate, "utc date");
       // Get the "next day" in UTC by setting the date to 1 day ahead
       const nextDay = new Date(utcDate);
       nextDay.setUTCDate(utcDate.getUTCDate() + 1); // Increment the day by 1
@@ -204,6 +208,30 @@ async function getTherapistAvailability(req, res) {
 
     let availabilityData = [];
 
+    // count total data
+    const totalCount = await TherapistAvailability.aggregate([
+      {
+        $match: {
+          therapistsId: { $in: filteredTherapists.map((t) => t._id) },
+        },
+      },
+      {
+        $lookup: {
+          from: "therapists",
+          localField: "therapistsId",
+          foreignField: "_id",
+          as: "therapistDetails",
+        },
+      },
+      {
+        $match: query,
+      },
+      {
+        $count: "total",
+      },
+    ]);
+
+    // add filter
     const data = await TherapistAvailability.aggregate([
       {
         $match: {
@@ -221,21 +249,21 @@ async function getTherapistAvailability(req, res) {
       {
         $match: query,
       },
-    ]);
-
+    ])
+      .skip(offset)
+      .limit(limit);
     availabilityData = [...availabilityData, ...data];
-
     availabilityData.sort((a, b) => new Date(a.date) - new Date(b.date));
     // Pagination logic
-    const totalItems = availabilityData.length;
-    const paginatedData = availabilityData.slice(offset, offset + limit);
-
+    const totalItems = totalCount.length > 0 ? totalCount[0].total : 0;
+    // const paginatedData = availabilityData.slice(offset, offset + limit);
+    // console.log(paginatedData, "paginatedData");
     return res.status(200).json({
       message: "Available slots fetched successfully",
       totalItems,
       totalPages: Math.ceil(totalItems / limit),
       currentPage: pageData,
-      appointmentData: paginatedData,
+      appointmentData: availabilityData,
     });
   } catch (error) {
     console.error("Error fetching availability:", error);

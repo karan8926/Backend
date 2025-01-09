@@ -6,7 +6,6 @@ const {
 } = require("../utils/removeExpireData");
 
 function TimeExtraction(date) {
-  console.log(typeof date, date, "type");
   const hours = String(date.getUTCHours()).padStart(2, "0");
   const minutes = String(date.getUTCMinutes()).padStart(2, "0");
   return `${hours}:${minutes}`;
@@ -33,10 +32,13 @@ async function createAppointmentOnTheBasisOfAvailability(
   ) {
     if (i < num45MinAppointments) {
       const appointmentStart = currentTime.clone();
+      // console.log(appointmentStart.toISOString(), "start");
       const appointmentEnd = appointmentStart.clone().add(45, "minutes");
+      // console.log(appointmentEnd.toISOString(), "end");
       appointments.push({
         therapistsId: therapistId,
-        date: appointmentStart.toISOString().split("T")[0],
+        // date: appointmentStart.toISOString().split("T")[0], old
+        date: appointmentStart.toISOString(), //new
         time: TimeExtraction(new Date(appointmentStart)),
         status: "none",
         appointmentType: "Consultation(45min)",
@@ -47,10 +49,13 @@ async function createAppointmentOnTheBasisOfAvailability(
 
     if (i < num30MinAppointments) {
       const appointmentStart = currentTime.clone();
+      // console.log(appointmentStart, "start");
       const appointmentEnd = appointmentStart.clone().add(30, "minutes");
+      // console.log(appointmentEnd, "end");
       appointments.push({
         therapistsId: therapistId,
-        date: appointmentStart.toISOString().split("T")[0],
+        // date: appointmentStart.toISOString().split("T")[0], old
+        date: appointmentStart.toISOString(), //new
         time: TimeExtraction(new Date(appointmentStart)),
         status: "none",
         appointmentType: "Follow-up(30min)",
@@ -58,6 +63,8 @@ async function createAppointmentOnTheBasisOfAvailability(
       currentTime = appointmentEnd;
     }
   }
+
+  // console.log(appointments, "appointments");
 
   const newAvailabilites = await TherapistAvailability.insertMany(appointments);
   return;
