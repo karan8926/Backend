@@ -249,11 +249,16 @@ async function getTherapistAvailability(req, res) {
       {
         $match: query,
       },
+      {
+        $sort: {
+          date: 1,
+        },
+      },
     ])
       .skip(offset)
       .limit(limit);
     availabilityData = [...availabilityData, ...data];
-    availabilityData.sort((a, b) => new Date(a.date) - new Date(b.date));
+    // availabilityData.sort((a, b) => new Date(a.date) - new Date(b.date));
     // Pagination logic
     const totalItems = totalCount.length > 0 ? totalCount[0].total : 0;
     // const paginatedData = availabilityData.slice(offset, offset + limit);
