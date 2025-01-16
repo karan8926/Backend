@@ -199,6 +199,7 @@ async function bookAppointment(req, res) {
       const slotId = slot[0]._id;
       const SaveStatus = await TherapistAvailability.findById(slotId);
       const patientsDetails = await Patient.find({ accessCode: accessCode });
+      const therapistDetails = await Therapist.findById(therapistsId);
       SaveStatus.status = "Pending";
       SaveStatus.patientsId = patientsDetails[0]._id;
       SaveStatus.appointment.name = name;
@@ -217,15 +218,24 @@ async function bookAppointment(req, res) {
       };
       await sendGmailService(PatientDetails);
 
+      const dateSentOnPhone = date.toString().split("T")[0];
+      const phoneValidation = await sendMobileMessage(
+        phone,
+        `We have confirmed your appointment with ${therapistDetails.name} for ${dateSentOnPhone} at ${time}`
+      );
+
+      if (phoneValidation === 400) {
+        return res.send("Phone Number is Invalid");
+      }
       const message = {
         date: date,
         time: time,
         // patientNumber: phone,
       };
-      // await sendMobileMessage(message);
 
       return res.status(200).json({
-        message: "Appointment booked successfully. Confirmation email sent.",
+        message:
+          "Appointment booked successfully. Confirmation sent on Email and Phone.",
         result: slot,
       });
     }
@@ -242,9 +252,9 @@ async function allAppointment(req, res) {
   const { searchType, searchQuery, region, speciality } = req.query;
   // console.log(searchType, searchQuery, region, speciality, "abcd");
   const filters = {
-    appointmentName: searchType === "patient" ? searchQuery : " ", 
-    therapistName: searchType === "therapist" ? searchQuery : " ", 
-    therapistRegion: region, 
+    appointmentName: searchType === "patient" ? searchQuery : " ",
+    therapistName: searchType === "therapist" ? searchQuery : " ",
+    therapistRegion: region,
     therapistSpeciality: speciality,
   };
   // add filter and search in it

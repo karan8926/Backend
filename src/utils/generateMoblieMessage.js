@@ -1,21 +1,23 @@
+const twilio = require("twilio");
+require("dotenv").config();
 
-const twilio = require('twilio');
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
-const client = twilio(accountSid, authToken);
+async function sendMobileMessage(phone_number, messageData) {
+  try {
+    const client = new twilio(accountSid, authToken);
 
-async function sendMobileMessage(message) {
-    try {
-        const response = await client.messages.create({
-            body: `Your appointment is booked for ${message.date} at ${message.time}.`,
-            from: '+17753208517',
-            to: `+91${message.patientNumber}`
-        });
-        console.log("SMS sent successfully:", response.sid);
-    } catch (error) {
-        console.error("Failed to send SMS:", error.message);
-    }
+    const message = await client.messages.create({
+      body: messageData,
+      to: phone_number,
+      from: process.env.TWILIO_PHONE_NUMBER,
+    });
+    console.log("Message Sent On Your Number");
+    return message.sid;
+  } catch (error) {
+    console.log(error, error.status, "error");
+    return error.status;
+  }
 }
-
 
 module.exports = sendMobileMessage;

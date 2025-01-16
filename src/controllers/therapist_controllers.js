@@ -7,6 +7,7 @@ const mongoose = require("mongoose");
 const { removeExpireAppointments } = require("../utils/removeExpireData");
 const moment = require("moment");
 const sendGmailService = require("../utils/generateGmailService");
+const sendMobileMessage = require("../utils/generateMoblieMessage");
 //admin added the therapist details
 async function AddTherapist(req, res) {
   const { name, email, number, specialty, region, password } = req.body;
@@ -473,6 +474,23 @@ const updateAppointmentStatus = async (req, res) => {
     };
     await sendGmailService(PatientDetails);
 
+    // send confirmation on phone number
+    const therapistDetails = await Therapist.findById(
+      existingResult.therapistsId
+    );
+    const patientPhoneNumber = existingResult.appointment.phone;
+    // console.log(patientPhoneNumber, "phone of patient");
+    const formatingDate = new Date(existingResult.date);
+    const dateSentOnPhone = formatingDate.toISOString().split("T")[0];
+    const messageSentOnPhone = `We've updated your appointment status with ${therapistDetails.name} for ${dateSentOnPhone} at ${existingResult.time},Current Status is ${status}`;
+
+    const phoneValidation = await sendMobileMessage(
+      patientPhoneNumber,
+      messageSentOnPhone
+    );
+    if (phoneValidation === 400) {
+      return res.send("Phone Number is Invalid");
+    }
     res.status(200).json({
       message: "Appointment status updated successfully",
       updatedResult,
