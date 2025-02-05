@@ -1,27 +1,33 @@
 const express = require('express');
 const cors = require('cors');
-const {connectDB} = require('./src/config/db');
 const Routes = require('./src/routes');
+const mySqlConn = require('./src/config/mysqlDb');
 
-require('dotenv').config()
+require('dotenv').config();
 
 const app = express();
 app.use(express.json());
 
-app.use(cors({
+app.use(
+  cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+  })
+);
 
 const port = process.env.PORT || 3000;
 
-app.use('/api', Routes)
+app.use('/api', Routes);
 
-const startServer = async () => {
+mySqlConn
+  .query('SELECT 1')
+  .then(() => {
+    console.log('Database connection successful');
     app.listen(port, () => {
-      console.log(`Server is running on port ${port}`);
+      console.log(`server listening on ${port}`);
     });
-  };
-  
-  connectDB(startServer);
+  })
+  .catch((err) => {
+    console.log(err);
+  });

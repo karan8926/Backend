@@ -1,33 +1,34 @@
-const { connectDB } = require("../config/db");
-const calendarAvailability = require("../models/calendar_models");
-const { TherapistAvailability } = require("../models/therapist_models");
+const mySqlConn = require('../config/mysqlDb');
 async function removeExpireAppointments() {
   try {
     const currentDate = new Date();
-    const today = new Date(currentDate.setHours(0, 0, 0, 0));
 
-    const data = await TherapistAvailability.deleteMany({
-      date: { $lt: today },
-      $or: [{ appointment: null }, { appointment: { $exists: false } }],
-    });
-    console.log(data, "data");
+    console.log(currentDate, 'today');
+    // Query to delete expired appointments
+    const [data] = await mySqlConn.query(
+      `DELETE FROM TherapistAvailability
+       WHERE date < ? AND (patientsId IS NULL)`,
+      [currentDate]
+    );
+
+    console.log(data, 'data'); 
     return;
   } catch (error) {
-    console.log(error, "erro");
+    console.log(error, 'error');
     return error;
   }
 }
 
 async function removeExpireCalendarAvailability() {
   try {
-    // Delete expired calendar availability entries in the database
-    const data = await calendarAvailability.deleteMany({
-      endTime: { $lt: new Date().toISOString() },
-    });
-    console.log(data);
+    // Query to delete expired calendar availability records
+    const [data] = await mySqlConn.query(
+      `DELETE FROM calendaravailability WHERE endTime < NOW()`
+    );
+
     return;
   } catch (error) {
-    console.log(error, "erro");
+    console.log(error, 'error');
     return error;
   }
 }
