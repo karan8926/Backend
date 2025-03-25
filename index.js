@@ -1,32 +1,34 @@
-const express = require('express');
-const cors = require('cors');
-const Routes = require('./src/routes');
-const mySqlConn = require('./src/config/mysqlDb');
+const express = require("express");
+const cors = require("cors");
+const Routes = require("./src/routes");
+const mySqlConn = require("./src/config/mysqlDb");
+const reminderSchedule = require("./src/utils/reminder");
 
-require('dotenv').config();
+require("dotenv").config();
 
 const app = express();
 app.use(express.json());
 
 app.use(
   cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
 const port = process.env.PORT || 3000;
 
-app.use('/api', Routes);
+app.use("/api", Routes);
 
 mySqlConn
-  .query('SELECT 1')
+  .query("SELECT 1")
   .then(() => {
-    console.log('Database connection successful');
+    console.log("Database connection successful");
     app.listen(port, () => {
       console.log(`server listening on ${port}`);
     });
+    reminderSchedule();
   })
   .catch((err) => {
     console.log(err);

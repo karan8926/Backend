@@ -1,43 +1,43 @@
-const jwt = require('jsonwebtoken');
-const { removeExpireAppointments } = require('../utils/removeExpireData');
-const moment = require('moment');
-const sendGmailService = require('../utils/generateGmailService');
-const sendMobileMessage = require('../utils/generateMoblieMessage');
-const mySqlConn = require('../config/mysqlDb');
+const jwt = require("jsonwebtoken");
+const { removeExpireAppointments } = require("../utils/removeExpireData");
+const moment = require("moment");
+const sendGmailService = require("../utils/generateGmailService");
+const sendMobileMessage = require("../utils/generateMoblieMessage");
+const mySqlConn = require("../config/mysqlDb");
 //admin added the therapist details
 async function AddTherapist(req, res) {
   const { name, email, number, specialty, region, password } = req.body;
 
   if (!name || !email || !number || !specialty || !region || !password) {
-    return res.status(400).json({ error: 'All fields are required.' });
+    return res.status(400).json({ error: "All fields are required." });
   }
 
   try {
     // Check if therapist already exists
     const [existingTherapist] = await mySqlConn.query(
-      'SELECT * FROM Therapist WHERE email = ?',
+      "SELECT * FROM Therapist WHERE email = ?",
       [email]
     );
 
     if (existingTherapist.length > 0) {
-      return res.status(400).json({ error: 'Therapist is already added.' });
+      return res.status(400).json({ error: "Therapist is already added." });
     }
 
-    const phoneRegex = /^\d{12}$/;
+    const phoneRegex = /^\d{11}$/;
     if (!phoneRegex.test(number)) {
       return res.status(400).json({
-        error: 'Phone number must be exactly 10 digits.',
+        error: "Phone number must be exactly 11 digits.",
       });
     }
 
     // Insert new therapist
     const [newTherapist] = await mySqlConn.query(
-      'INSERT INTO Therapist (name, email, phone_number, specialty, region, password) VALUES (?, ?, ?, ?, ?, ?)',
+      "INSERT INTO Therapist (name, email,number, specialty, region, password) VALUES (?, ?, ?, ?, ?, ?)",
       [name, email, number, specialty, region, password]
     );
 
     return res.status(201).json({
-      message: 'Therapist added successfully!',
+      message: "Therapist added successfully!",
       Result: {
         id: newTherapist.insertId,
         name,
@@ -49,7 +49,7 @@ async function AddTherapist(req, res) {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: 'Error adding therapist' });
+    return res.status(500).json({ error: "Error adding therapist" });
   }
 }
 
@@ -61,7 +61,7 @@ async function getTherapist(req, res) {
   try {
     // Retrieve therapists based on filter and apply pagination
     const query = `SELECT * FROM Therapist WHERE ${
-      searchTherapist ? 'name LIKE ?' : '1=1'
+      searchTherapist ? "name LIKE ?" : "1=1"
     } LIMIT ? OFFSET ?`;
     const params = searchTherapist
       ? [`%${searchTherapist}%`, limit, offset]
@@ -70,7 +70,7 @@ async function getTherapist(req, res) {
 
     // Get total count of therapists
     const totalDataQuery = `SELECT COUNT(*) AS total FROM Therapist WHERE ${
-      searchTherapist ? 'name LIKE ?' : '1=1'
+      searchTherapist ? "name LIKE ?" : "1=1"
     }`;
     const totalDataParams = searchTherapist ? [`%${searchTherapist}%`] : [];
     const [totalAvailability] = await mySqlConn.query(
@@ -79,14 +79,14 @@ async function getTherapist(req, res) {
     );
 
     return res.status(200).json({
-      message: 'Fetched successfully',
+      message: "Fetched successfully",
       availability,
       totalAvailability: totalAvailability[0].total,
       noOfPages: Math.ceil(totalAvailability[0].total / limit),
     });
   } catch (error) {
-    console.error('Error fetching therapists:', error);
-    return res.status(500).json({ error: 'Error fetching therapist' });
+    console.error("Error fetching therapists:", error);
+    return res.status(500).json({ error: "Error fetching therapist" });
   }
 }
 
@@ -96,43 +96,43 @@ async function AddTherapistAvailability(req, res) {
   // Validate required fields
   if (!email || !date || !time) {
     return res.status(400).json({
-      error: 'All fields are required.',
+      error: "All fields are required.",
     });
   }
 
   try {
     // Find the therapist by email
     const [therapistData] = await mySqlConn.query(
-      'SELECT id FROM Therapist WHERE email = ?',
+      "SELECT id FROM Therapist WHERE email = ?",
       [email]
     );
 
     if (therapistData.length === 0) {
-      return res.status(404).json({ error: 'Therapist not found.' });
+      return res.status(404).json({ error: "Therapist not found." });
     }
 
     const therapistId = therapistData[0].id;
 
     // Check if the therapist already has an availability for the given date and time
     const [existingAvailability] = await mySqlConn.query(
-      'SELECT * FROM TherapistAvailability WHERE therapistsId = ? AND date = ? AND time = ?',
+      "SELECT * FROM TherapistAvailability WHERE therapistsId = ? AND date = ? AND time = ?",
       [therapistId, date, time]
     );
 
     if (existingAvailability.length > 0) {
       return res.status(400).json({
-        error: 'This time slot is already added for the therapist.',
+        error: "This time slot is already added for the therapist.",
       });
     }
 
     // Insert new availability
     const [newAvailability] = await mySqlConn.query(
-      'INSERT INTO TherapistAvailability (therapistsId, date, time, status, appointmentType) VALUES (?, ?, ?, ?, ?)',
-      [therapistId, date, time, 'none', appointmentType]
+      "INSERT INTO TherapistAvailability (therapistsId, date, time, status, appointmentType) VALUES (?, ?, ?, ?, ?)",
+      [therapistId, date, time, "none", appointmentType]
     );
 
     return res.status(201).json({
-      message: 'Therapist availability added successfully.',
+      message: "Therapist availability added successfully.",
       result: {
         id: newAvailability.insertId,
         therapistId,
@@ -145,7 +145,7 @@ async function AddTherapistAvailability(req, res) {
     console.error(error);
     return res
       .status(500)
-      .json({ error: 'Error adding therapist availability.' });
+      .json({ error: "Error adding therapist availability." });
   }
 }
 
@@ -163,14 +163,17 @@ async function getTherapistAvailability(req, res) {
       currentMonth,
       appointmentType,
     } = req.query;
+    console.log(typeof appointmentType, "appointmentType");
     const pageData = parseInt(req.query.pageNo) || 1;
     const limit = 10;
     const offset = (pageData - 1) * limit;
     await removeExpireAppointments();
-    let therapistquery = '';
-    let availabilityquery = '';
+    let therapistquery = "";
+    let availabilityquery = "";
 
-    if (region) therapistquery += `AND region = '${region.trim()}' `;
+    if (region && region.trim() !== "") {
+      therapistquery += `AND region = '${region.trim()}' `;
+    }
     if (name) therapistquery += `AND name LIKE '%${name.trim()}%' `;
     if (email) therapistquery += `AND email LIKE '%${email.trim()}%' `;
     if (number) therapistquery += `AND phone_number = '${number.trim()}' `;
@@ -180,9 +183,9 @@ async function getTherapistAvailability(req, res) {
     if (therapistId)
       availabilityquery += `AND therapistsId = '${therapistId}' `;
     if (status) availabilityquery += `AND status = '${status}' `;
-    if (appointmentType)
+    if (appointmentType && appointmentType.trim() !== "") {
       availabilityquery += `AND appointmentType = '${appointmentType.trim()}' `;
-
+    }
     // update this time zone code same update needed in book appointment
     // if (date !== ' ') {
     //   console.log(new Date(date), 'date is');
@@ -195,7 +198,7 @@ async function getTherapistAvailability(req, res) {
     //   availabilityquery += `AND date = '${startOfDay}'`;
     // }
 
-    if (date !== ' ') {
+    if (date !== " ") {
       // Parse the date in UTC
       const parsedDate = new Date(date);
       const utcDate = new Date(
@@ -211,8 +214,8 @@ async function getTherapistAvailability(req, res) {
       nextDay.setUTCDate(utcDate.getUTCDate() + 1); // Increment the day by 1
 
       // Format the dates in YYYY-MM-DD format for MySQL comparison
-      const formattedUTCDate = utcDate.toISOString().split('T')[0]; // "YYYY-MM-DD"
-      const formattedNextDay = nextDay.toISOString().split('T')[0]; // "YYYY-MM-DD"
+      const formattedUTCDate = utcDate.toISOString().split("T")[0]; // "YYYY-MM-DD"
+      const formattedNextDay = nextDay.toISOString().split("T")[0]; // "YYYY-MM-DD"
 
       // Apply the query filter using MySQL's DATE() function to compare with the date stored as VARCHAR
       if (!isNaN(utcDate.getTime())) {
@@ -220,7 +223,7 @@ async function getTherapistAvailability(req, res) {
       }
     }
 
-    if (currentMonth !== 'null') {
+    if (currentMonth !== "null") {
       const currentMonthDate = new Date(currentMonth);
       availabilityquery += `AND MONTH(date) = ${
         currentMonthDate.getMonth() + 1
@@ -251,15 +254,15 @@ async function getTherapistAvailability(req, res) {
       'SELECT DATE_FORMAT(date, "%Y-%m-%d") AS your_date_column FROM TherapistAvailability'
     );
     return res.status(200).json({
-      message: 'Available slots fetched successfully',
+      message: "Available slots fetched successfully",
       totalItems: totalCount[0].total,
       totalPages: Math.ceil(totalCount[0].total / limit),
       currentPage: pageData,
       appointmentData: availabilityData,
     });
   } catch (error) {
-    console.error('Error fetching availability:', error);
-    return res.status(500).json({ error: 'Error fetching availability' });
+    console.error("Error fetching availability:", error);
+    return res.status(500).json({ error: "Error fetching availability" });
   }
 }
 
@@ -268,39 +271,39 @@ async function loginTherapist(req, res) {
     const { email, password } = req.body;
 
     const [getData] = await mySqlConn.query(
-      'SELECT * FROM Therapist WHERE email = ?',
+      "SELECT * FROM Therapist WHERE email = ?",
       [email]
     );
 
     if (getData.length === 0) {
-      return res.status(404).json({ message: 'Therapist not found' });
+      return res.status(404).json({ message: "Therapist not found" });
     }
     const isMatch =
       getData[0].password === password && getData[0].email === email;
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const token = jwt.sign(
       { id: getData[0].id, email: getData[0].email },
-      process.env.JWT_SECRET || 'your_jwt_secret',
-      { expiresIn: '24h' }
+      process.env.JWT_SECRET || "your_jwt_secret",
+      { expiresIn: "24h" }
     );
 
     res.status(200).json({
-      message: 'Login successful',
+      message: "Login successful",
       token,
       data: {
         id: getData[0].id,
         name: getData[0].name,
         email: getData[0].email,
-        type: 'therapist',
+        type: "therapist",
       },
     });
   } catch (error) {
-    console.log(error, 'error');
-    console.error('Error in therapist login:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.log(error, "error");
+    console.error("Error in therapist login:", error);
+    res.status(500).json({ message: "Server error" });
   }
 }
 
@@ -308,13 +311,13 @@ async function getTherapistSpecialtyRegion(req, res) {
   try {
     // Get unique specialties and regions
     const [therapistSpecialty] = await mySqlConn.query(
-      'SELECT DISTINCT specialty FROM Therapist'
+      "SELECT DISTINCT specialty FROM Therapist"
     );
     const [therapistRegion] = await mySqlConn.query(
-      'SELECT DISTINCT region FROM Therapist'
+      "SELECT DISTINCT region FROM Therapist"
     );
     const [therapistNames] = await mySqlConn.query(
-      'SELECT name FROM Therapist'
+      "SELECT name FROM Therapist"
     );
 
     res.status(200).json({
@@ -324,10 +327,10 @@ async function getTherapistSpecialtyRegion(req, res) {
       therapistName: therapistNames,
     });
   } catch (error) {
-    console.error('Error fetching therapist specialty:', error);
+    console.error("Error fetching therapist specialty:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch therapist specialty',
+      message: "Failed to fetch therapist specialty",
     });
   }
 }
@@ -340,7 +343,7 @@ async function getTherapistDetailsByIdAndStatus(req, res) {
     const offset = (pageNo - 1) * limit;
 
     if (!therapistId) {
-      return res.status(400).json({ error: 'therapistId is required.' });
+      return res.status(400).json({ error: "therapistId is required." });
     }
 
     // Query for the therapist's availability details
@@ -355,7 +358,7 @@ async function getTherapistDetailsByIdAndStatus(req, res) {
     );
 
     if (result.length === 0) {
-      return res.status(204).json({ message: 'Data not found.' });
+      return res.status(204).json({ message: "Data not found." });
     }
 
     // Get the total count of records
@@ -366,15 +369,15 @@ async function getTherapistDetailsByIdAndStatus(req, res) {
     );
 
     return res.status(200).json({
-      message: 'Available data fetched successfully',
+      message: "Available data fetched successfully",
       totalItems: totalItems[0].total,
       totalPages: Math.ceil(totalItems[0].total / limit),
       currentPage: pageNo,
       result,
     });
   } catch (error) {
-    console.error('Error fetching therapist details:', error);
-    return res.status(500).json({ error: 'Error fetching therapist details' });
+    console.error("Error fetching therapist details:", error);
+    return res.status(500).json({ error: "Error fetching therapist details" });
   }
 }
 
@@ -386,7 +389,7 @@ async function getTherapistDetailsById(req, res) {
     const offset = (pageNo - 1) * limit;
 
     if (!therapistId) {
-      return res.status(400).json({ error: 'therapistId is required.' });
+      return res.status(400).json({ error: "therapistId is required." });
     }
 
     // Query for the therapist's availability details
@@ -401,7 +404,7 @@ async function getTherapistDetailsById(req, res) {
     );
 
     if (result.length === 0) {
-      return res.status(204).json({ message: 'Data not found.' });
+      return res.status(204).json({ message: "Data not found." });
     }
 
     // Get the total count of records
@@ -412,78 +415,91 @@ async function getTherapistDetailsById(req, res) {
     );
 
     return res.status(200).json({
-      message: 'Available data fetched successfully',
+      message: "Available data fetched successfully",
       totalItems: totalItems[0].total,
       totalPages: Math.ceil(totalItems[0].total / limit),
       currentPage: pageNo,
       result,
     });
   } catch (error) {
-    console.error('Error fetching therapist details:', error);
-    return res.status(500).json({ error: 'Error fetching therapist details' });
+    console.error("Error fetching therapist details:", error);
+    return res.status(500).json({ error: "Error fetching therapist details" });
   }
 }
 
-const updateAppointmentStatus = async (req, res) => {
+// // now admin can update the status of appointment
+// const updateAppointmentStatus = async (req, res) => {
+//   try {
+//     const { id, status, emailId } = req.body;
+//     // console.log(req.body, 'req.body');
+//     // Retrieve existing appointment details
+//     const [existingResult] = await mySqlConn.query(
+//       "SELECT * FROM TherapistAvailability WHERE id = ?",
+//       [id]
+//     );
+
+//     if (existingResult.length === 0) {
+//       return res.status(404).json({ message: "Appointment not found" });
+//     }
+
+//     // Update appointment status
+//     const [updatedResult] = await mySqlConn.query(
+//       "UPDATE TherapistAvailability SET status = ? WHERE id = ?",
+//       [status, id]
+//     );
+
+//     // Send email to patient
+//     const PatientDetails = {
+//       patientEmail: emailId,
+//       status: status,
+//     };
+//     // console.log(PatientDetails, 'details');
+//     await sendGmailService(PatientDetails);
+
+//     // Send confirmation SMS to the patient
+//     const [therapistDetails] = await mySqlConn.query(
+//       "SELECT name FROM Therapist WHERE id = ?",
+//       [existingResult[0].therapistsId]
+//     );
+
+//     const patientPhoneNumber = existingResult[0].appointment_phone;
+//     const formatingDate = new Date(existingResult[0].date);
+//     const dateSentOnPhone = formatingDate.toISOString().split("T")[0];
+//     const messageSentOnPhone = `We've updated your appointment status with ${therapistDetails[0].name} for ${dateSentOnPhone} at ${existingResult[0].time}, Current Status is ${status}`;
+
+//     const phoneValidation = await sendMobileMessage(
+//       `+${patientPhoneNumber}`,
+//       messageSentOnPhone
+//     );
+
+//     if (phoneValidation === 400) {
+//       return res.send("Phone Number is Invalid");
+//     }
+
+//     res.status(200).json({
+//       message: "Appointment status updated successfully",
+//       updatedResult,
+//     });
+//   } catch (error) {
+//     console.error("Error updating appointment status:", error);
+//     res.status(500).json({ message: "Internal server error", error });
+//   }
+// };
+
+async function showAllTherapistsNames(req, res) {
   try {
-    const { id, status, emailId } = req.body;
-    // console.log(req.body, 'req.body');
-    // Retrieve existing appointment details
-    const [existingResult] = await mySqlConn.query(
-      'SELECT * FROM TherapistAvailability WHERE id = ?',
-      [id]
+    const [therapistaData] = await mySqlConn.query(
+      "select name from Therapist"
     );
-
-    if (existingResult.length === 0) {
-      return res.status(404).json({ message: 'Appointment not found' });
-    }
-
-    // Update appointment status
-    const [updatedResult] = await mySqlConn.query(
-      'UPDATE TherapistAvailability SET status = ? WHERE id = ?',
-      [status, id]
-    );
-
-    // Send email to patient
-    const PatientDetails = {
-      patientEmail: emailId,
-      status: status,
-    };
-    // console.log(PatientDetails, 'details');
-    // when any update occurs by therapist in appointment that time this function will call
-    await sendGmailService(PatientDetails);
-
-    // Send confirmation SMS to the patient
-    const [therapistDetails] = await mySqlConn.query(
-      'SELECT name FROM Therapist WHERE id = ?',
-      [existingResult[0].therapistsId]
-    );
-
-    const patientPhoneNumber = existingResult[0].appointment_phone;
-    const formatingDate = new Date(existingResult[0].date);
-    const dateSentOnPhone = formatingDate.toISOString().split('T')[0];
-    // here we send message to patient when any update occurs in appointment 
-    const messageSentOnPhone = `We've updated your appointment status with ${therapistDetails[0].name} for ${dateSentOnPhone} at ${existingResult[0].time}, Current Status is ${status}`;
-
-    const phoneValidation = await sendMobileMessage(
-      patientPhoneNumber,
-      messageSentOnPhone
-    );
-
-    if (phoneValidation === 400) {
-      return res.send('Phone Number is Invalid');
-    }
-
     res.status(200).json({
-      message: 'Appointment status updated successfully',
-      updatedResult,
+      therapistaData,
     });
   } catch (error) {
-    console.error('Error updating appointment status:', error);
-    res.status(500).json({ message: 'Internal server error', error });
+    res.status(500).json({
+      message: "something went wrong",
+    });
   }
-};
-
+}
 module.exports = {
   AddTherapist,
   AddTherapistAvailability,
@@ -491,7 +507,7 @@ module.exports = {
   loginTherapist,
   getTherapist,
   getTherapistSpecialtyRegion,
-  updateAppointmentStatus,
   getTherapistDetailsByIdAndStatus,
   getTherapistDetailsById,
+  showAllTherapistsNames,
 };
